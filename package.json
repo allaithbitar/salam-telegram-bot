@@ -4,8 +4,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start": "bun ./src/index.js",
     "dev": "bun run --watch ./src/index.js",
-    "lint": "bun run eslint --config eslint.config.js src/ ./src/*"
+    "build": "bun build ./src/index.js --outdir ./dist --target bun"
+    "start:build": "bun ./dist/index.js",
+    "lint": "bun run eslint --config eslint.config.js src/ ./src/*",
   },
   "author": "allaithbitar",
   "license": "ISC",
