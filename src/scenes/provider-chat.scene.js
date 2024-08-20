@@ -1,16 +1,12 @@
 import { Scenes } from "telegraf";
 import { message } from "telegraf/filters";
 import { SCENES, STRINGS } from "../constants/index.js";
-import {
-  formatSystemMessage,
-  getChatId,
-  getUserId,
-  replyError,
-} from "@utils/index.js";
+import { formatSystemMessage, getUserId, replyError } from "@utils/index.js";
 
 import {
   removeActiveProvider,
   removeAnyRelatedCurrentChats,
+  updateLastChatTgId,
 } from "@db/actions.js";
 import { generateProviderChatScreenkeyboard } from "@utils/keyboards.js";
 import { appService } from "@utils/app.service.js";
@@ -40,6 +36,7 @@ providerChatScene.on(message("text"), async (ctx) => {
       ![
         STRINGS.END_CHAT,
         STRINGS.END_CHAT_STOP_PROVIDING,
+        STRINGS.STOP_PROVIDING,
         STRINGS.REFRESH,
       ].includes(ctx.message.text)
     ) {
@@ -50,49 +47,73 @@ providerChatScene.on(message("text"), async (ctx) => {
 
       return ctx.telegram.sendMessage(
         consumerId,
-        formatSystemMessage(ctx.message.text, "consumer"),
+        formatSystemMessage(ctx.message.text, "provider"),
       );
     }
 
     switch (ctx.message.text) {
       case STRINGS.END_CHAT: {
-        if (consumerId)
-          await ctx.telegram.sendMessage(
-            consumerId,
-            formatSystemMessage(STRINGS.PROVIDER_HAS_ENDED_CHAT),
-          );
+        if (consumerId) {
+          await updateLastChatTgId(consumerId, getUserId(ctx));
+        }
 
         await Promise.all([
           ctx.reply(formatSystemMessage(STRINGS.LEAVING)),
           removeAnyRelatedCurrentChats(getUserId(ctx)),
         ]);
-        return ctx.reply(
-          formatSystemMessage(STRINGS.CONVERSATION_HAS_BEEN_ENDED),
-          generateProviderChatScreenkeyboard(false),
-        );
+
+        return Promise.all([
+          ctx.reply(
+            formatSystemMessage(STRINGS.CONVERSATION_HAS_BEEN_ENDED),
+            generateProviderChatScreenkeyboard(false),
+          ),
+          ...(consumerId
+            ? [
+                ctx.telegram.sendMessage(
+                  consumerId,
+                  formatSystemMessage(STRINGS.PROVIDER_HAS_ENDED_CHAT),
+                ),
+              ]
+            : []),
+        ]);
+      }
+
+      case STRINGS.STOP_PROVIDING: {
+        await Promise.all([
+          removeActiveProvider(getUserId(ctx)),
+          ctx.scene.leave(),
+        ]);
+        return ctx.scene.enter(SCENES.MAIN_SCENE);
       }
       case STRINGS.END_CHAT_STOP_PROVIDING: {
-        if (consumerId)
+        if (consumerId) {
+          await updateLastChatTgId(consumerId, getUserId(ctx));
+        }
+
+        await ctx.reply(formatSystemMessage(STRINGS.LEAVING)),
+          await Promise.all([
+            removeAnyRelatedCurrentChats(getUserId(ctx)),
+            removeActiveProvider(getUserId(ctx)),
+          ]);
+
+        if (consumerId) {
           await ctx.telegram.sendMessage(
             consumerId,
             formatSystemMessage(STRINGS.PROVIDER_HAS_ENDED_CHAT),
           );
-        await Promise.all([
-          ctx.reply(formatSystemMessage(STRINGS.LEAVING)),
-          removeAnyRelatedCurrentChats(getUserId(ctx)),
-          removeActiveProvider(getUserId(ctx)),
-        ]);
+        }
+
         await ctx.scene.leave();
         return ctx.scene.enter(SCENES.MAIN_SCENE);
       }
-      case STRINGS.REFRESH: {
-        await ctx.reply(
-          formatSystemMessage(STRINGS.REFRESHING),
-          generateProviderChatScreenkeyboard(
-            appService.getIsInChat(getUserId(ctx)),
-          ),
-        );
-      }
+      // case STRINGS.REFRESH: {
+      //   await ctx.reply(
+      //     formatSystemMessage(STRINGS.REFRESH),
+      //     generateProviderChatScreenkeyboard(
+      //       appService.getIsInChat(getUserId(ctx)),
+      //     ),
+      //   );
+      // }
     }
   } catch (error) {
     return replyError(error, ctx);

@@ -5,6 +5,7 @@ import { mainScene } from "@scenes/main.scene";
 import { matchingScene } from "@scenes/matching.scene";
 import { providerChatScene } from "@scenes/provider-chat.scene";
 import { Postgres } from "@telegraf/session/pg";
+import { replyError } from "@utils/index";
 import { Scenes, session, Telegraf } from "telegraf";
 
 const TOKEN = process.env.BOT_TOKEN;
@@ -38,6 +39,11 @@ class BotService {
         bot.use(stage.middleware());
         bot.start((ctx) => {
           return ctx.scene.enter(SCENES.ENTER_SCENE);
+        });
+
+        bot.catch((err, ctx) => {
+          console.log(err);
+          return replyError(ctx);
         });
 
         bot.launch({}, () => {

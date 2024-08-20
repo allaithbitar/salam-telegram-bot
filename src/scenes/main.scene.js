@@ -14,27 +14,32 @@ const getMainSceneProviderKeyboard = (isCurrentlyProviding) => {
   return Markup.keyboard([
     isCurrentlyProviding ? STRINGS.STOP_PROVIDING : STRINGS.START_PROVIDING,
     STRINGS.REFRESH,
-  ]).resize();
+  ])
+    .resize()
+    .oneTime();
 };
 
-const MAIN_SCENE_CONSUMER_KEYBOARD = Markup.keyboard([
-  STRINGS.CONNECT_TO_PROVIDER,
-  STRINGS.REFRESH,
-])
-  .resize()
-  .oneTime();
+const getMainSceneConsumerKeyboard = (shouldShowConnectToLastProviderButton) =>
+  Markup.keyboard([
+    STRINGS.CONNECT_TO_PROVIDER,
+    ...(shouldShowConnectToLastProviderButton
+      ? [STRINGS.CONNECT_TO_LAST_PROVIDER]
+      : []),
+    STRINGS.REFRESH,
+  ])
+    .resize()
+    .oneTime();
 
 mainScene.enter(async (ctx) => {
   try {
-    const { isProvider, isAvailable } = await getCurrentUserTypeAndStatus(
-      getUserId(ctx),
-    );
+    const { isProvider, isAvailable, lastChatTgId } =
+      await getCurrentUserTypeAndStatus(getUserId(ctx));
 
     return ctx.reply(
       formatSystemMessage(STRINGS.MAIN_MENU),
       isProvider
         ? getMainSceneProviderKeyboard(isAvailable)
-        : MAIN_SCENE_CONSUMER_KEYBOARD,
+        : getMainSceneConsumerKeyboard(!!lastChatTgId),
     );
   } catch (error) {
     return replyError(error, ctx);
@@ -48,8 +53,15 @@ mainScene.on(message("text"), async (ctx) => {
         await ctx.scene.leave();
         return ctx.scene.enter(SCENES.MATCHING_SCENE);
       }
+      case STRINGS.CONNECT_TO_LAST_PROVIDER: {
+        await ctx.scene.leave();
+        return ctx.scene.enter(SCENES.MATCHING_SCENE, {
+          tryConnectToLastProvider: true,
+        });
+      }
+
       case STRINGS.START_PROVIDING: {
-        Promise.all([
+        await Promise.all([
           addActiveProvider(getUserId(ctx)),
           ctx.reply(formatSystemMessage(STRINGS.LOADING)),
         ]);

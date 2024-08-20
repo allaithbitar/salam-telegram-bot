@@ -21,7 +21,6 @@ export const addActiveProvider = (tgId) =>
 
 export const getRandomAvailableProviderTgId = async () => {
   const res = await cloudDb.rpc("getRandomProvider");
-  console.log(res);
   return res.data?.tg_id;
 };
 
@@ -32,21 +31,21 @@ export const createChat = ({ providerId, consumerId }) =>
   });
 
 export const getCurrentUserTypeAndStatus = async (tgId) => {
-  const { data, error } = await cloudDb
+  const { data } = await cloudDb
     .from("bot_users")
     .select(
-      "is_provider,bot_active_providers!bot_active_providers_tg_id_fkey (is_available)",
+      "last_chat_tg_id,is_provider,bot_active_providers!bot_active_providers_tg_id_fkey (is_available)",
     )
     .eq("tg_id", tgId);
   if (data && data[0]) {
-    const { is_provider, bot_active_providers } = data[0];
+    const { is_provider, bot_active_providers, last_chat_tg_id } = data[0];
     return {
       isProvider: is_provider,
       isAvailable: bot_active_providers?.is_available ?? false,
-      error,
+      lastChatTgId: last_chat_tg_id,
     };
   }
-  return { isProvider: false, isAvailable: false, error };
+  return { isProvider: false, isAvailable: false, lastChatTgId: null };
 };
 
 export const getAllCurrentChats = () => cloudDb.from("current_chats").select();
@@ -74,3 +73,11 @@ export const registerUser = ({
 
 export const getIsRegisteredUser = (tgId) =>
   cloudDb.from("bot_users").select("tg_id").eq("tg_id", tgId);
+
+export const updateLastChatTgId = (consumerId, providerId) =>
+  cloudDb
+    .from("bot_users")
+    .update({
+      last_chat_tg_id: providerId,
+    })
+    .eq("tg_id", consumerId);
