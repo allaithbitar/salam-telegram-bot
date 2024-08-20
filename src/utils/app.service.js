@@ -1,6 +1,3 @@
-import { getAllCurrentChats } from "@db/actions";
-import { currentChatsChannel } from "@db/index";
-
 export class AppService {
   _localCurrentConnects = new Map();
   // _avaiableProvider
@@ -84,8 +81,10 @@ export class AppService {
     }
   }
 
-  constructor() {
-    currentChatsChannel
+  constructor() {}
+
+  subscribeToDbUpdatesChannel(dbUpdatesChannel) {
+    dbUpdatesChannel
       .on(
         "postgres_changes",
         {
@@ -96,8 +95,8 @@ export class AppService {
       )
       .subscribe();
   }
-  async syncLocalState() {
-    const { data, error } = await getAllCurrentChats();
+  async syncLocalState(currentChatsSource) {
+    const { data, error } = await currentChatsSource();
     if (!error && data) {
       for (const chat of data) {
         const { provider_id, consumer_id } = chat;

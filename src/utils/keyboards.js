@@ -6,6 +6,7 @@ export const generateProviderChatScreenkeyboard = (allowEndingChat) =>
     [
       ...(allowEndingChat ? [STRINGS.END_CHAT] : []),
       STRINGS.END_CHAT_STOP_PROVIDING,
+      STRINGS.REFRESH,
     ],
     {
       columns: 1,

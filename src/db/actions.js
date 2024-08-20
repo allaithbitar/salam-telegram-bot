@@ -21,7 +21,8 @@ export const addActiveProvider = (tgId) =>
 
 export const getRandomAvailableProviderTgId = async () => {
   const res = await cloudDb.rpc("getRandomProvider");
-  return res.data?.chat_id;
+  console.log(res);
+  return res.data?.tg_id;
 };
 
 export const createChat = ({ providerId, consumerId }) =>
@@ -31,7 +32,7 @@ export const createChat = ({ providerId, consumerId }) =>
   });
 
 export const getCurrentUserTypeAndStatus = async (tgId) => {
-  const { data } = await cloudDb
+  const { data, error } = await cloudDb
     .from("bot_users")
     .select(
       "is_provider,bot_active_providers!bot_active_providers_tg_id_fkey (is_available)",
@@ -42,9 +43,10 @@ export const getCurrentUserTypeAndStatus = async (tgId) => {
     return {
       isProvider: is_provider,
       isAvailable: bot_active_providers?.is_available ?? false,
+      error,
     };
   }
-  return { isProvider: false, isAvailable: false };
+  return { isProvider: false, isAvailable: false, error };
 };
 
 export const getAllCurrentChats = () => cloudDb.from("current_chats").select();
@@ -54,3 +56,21 @@ export const removeAnyRelatedCurrentChats = (userId) =>
     .from("current_chats")
     .delete()
     .or(`consumer_id.eq.${userId},provider_id.eq.${userId}`);
+
+export const registerUser = ({
+  tg_id,
+  username,
+  first_name,
+  last_name,
+  is_provider,
+}) =>
+  cloudDb.from("bot_users").upsert({
+    tg_id,
+    username,
+    first_name,
+    last_name,
+    is_provider,
+  });
+
+export const getIsRegisteredUser = (tgId) =>
+  cloudDb.from("bot_users").select("tg_id").eq("tg_id", tgId);

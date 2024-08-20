@@ -1,3 +1,6 @@
+import { STRINGS } from "@constants/index";
+import { fmt, underline } from "telegraf/format";
+
 export const getUserId = (ctx) =>
   ctx?.update?.message?.from?.id || ctx?.update?.callback_query?.from?.id || 0;
 
@@ -53,8 +56,18 @@ export const addRemoveKeyboardToMarkup = (replayMarkup) => ({
 });
 
 export const replyError = (error, ctx) => {
-  const errorMessage = error?.error?.message ?? error.message;
-  return ctx.reply(`ERROR: ${errorMessage.message}`);
+  let errorMessage;
+
+  if (typeof error === "string") {
+    errorMessage = error;
+  }
+
+  errorMessage =
+    errorMessage ??
+    error?.error?.message ??
+    error.message ??
+    STRINGS.SOMETHING_WENT_WRONG;
+  return ctx.reply(formatSystemMessage(`ERROR: ${errorMessage}`));
 };
 
 export const getDbData = (dbRes) => dbRes.data;
@@ -85,3 +98,18 @@ export const extractMessagePayload = (messageText) => {
 export const MESSAGE_PAYLOAD_TYPES = {
   CONSUMER_CONNECTED_TO_PROVIDER: "CONSUMER_CONNECTED_TO_PROVIDER",
 };
+
+export const formatSystemMessage = (messageText, from = "system") => {
+  const fromMap = {
+    system: "النظام",
+    consumer: "الشخص المجهول",
+    provider: "المتطوع",
+  };
+  return fmt`[ ${underline`${fromMap[from]}`} ] \n ${messageText}`;
+};
+
+export class BotError extends Error {
+  constructor(cause, overrideMessage) {
+    super(overrideMessage ?? "SystemError", { cause });
+  }
+}

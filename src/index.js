@@ -1,9 +1,12 @@
 import { appService } from "@utils/app.service";
 import { botService } from "services/bot.service";
+import { dbUpdatesChannel } from "./db";
+import { getAllCurrentChats } from "@db/actions";
 
 const BootstrapApp = async () => {
   try {
-    await appService.syncLocalState();
+    appService.subscribeToDbUpdatesChannel(dbUpdatesChannel);
+    await appService.syncLocalState(getAllCurrentChats);
     const bot = await botService.startBot();
     process.once("SIGINT", () => bot.stop("SIGINT"));
     process.once("SIGTERM", () => bot.stop("SIGTERM"));

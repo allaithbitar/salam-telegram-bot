@@ -1,4 +1,5 @@
 const SCENES = {
+  ENTER_SCENE: "ENTER_SCENE",
   MATCHING_SCENE: "MATCHING_SCENE",
   MAIN_SCENE: "MAIN_SCENE",
   CHAT_SCENE: "CHAT_SCENE",
@@ -10,8 +11,8 @@ const ACTIONS = {
   START_PROVIDING: "START_PROVIDING",
   STOP_PROVIDING: "STOP_PROVIDING",
 };
-
 const STRINGS = {
+  WELCOME_MESSAGE: "WELCOME_MESSAGE",
   LOADING: "جار التحميل ...",
   MAIN_MENU: "القائمة الرئيسية :",
   START_PROVIDING: "[ السماح باستلام طلبات محادثة ]",
@@ -37,6 +38,8 @@ const STRINGS = {
   YOU_ARE_NOT_CONNECTED_WTIH_ANY_CONSUMER: "لست بمحادثة مع اي شخص",
   CONVERSATION_HAS_BEEN_ENDED: "تم إنهاء المحادثة",
   PROVIDER_HAS_ENDED_CHAT: "قام المتطوع بإنهاء المحادثة",
+  CONTINUE: "متابعة",
+  REFRESH: "[ تحديث ]",
 };
 
 const BROADCAST_TYPE = {

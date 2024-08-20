@@ -5,4 +5,4 @@ export const cloudDb = createClient(
   process.env.SUPERBASE_KEY,
 );
 
-export const currentChatsChannel = cloudDb.channel("current_chats");
+export const dbUpdatesChannel = cloudDb.channel("current_chats");
