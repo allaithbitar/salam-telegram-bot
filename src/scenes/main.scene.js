@@ -1,8 +1,8 @@
 import { SCENES, STRINGS } from "@constants/index";
 import {
-  addActiveProvider,
+  updateUserPreferences,
   getCurrentUserTypeAndStatus,
-  removeActiveProvider,
+  getLastChatTgId,
 } from "@db/actions";
 import { formatSystemMessage, getUserId, replyError } from "@utils/index";
 import { Markup, Scenes } from "telegraf";
@@ -25,19 +25,27 @@ const getMainSceneConsumerKeyboard = (shouldShowConnectToLastProviderButton) =>
     ...(shouldShowConnectToLastProviderButton
       ? [STRINGS.CONNECT_TO_LAST_PROVIDER]
       : []),
+
+    STRINGS.SEND_COMPLAIN,
+    STRINGS.VIEW_CONNECTS_LIST,
     STRINGS.REFRESH,
   ])
     .resize()
     .oneTime();
 
 mainScene.enter(async (ctx) => {
+  let lastChatTgId;
   try {
-    const { isProvider, isAvailable, lastChatTgId } =
-      await getCurrentUserTypeAndStatus(getUserId(ctx));
+    const { canProvide, isAvailable } = await getCurrentUserTypeAndStatus(
+      getUserId(ctx),
+    );
+    if (!canProvide) {
+      lastChatTgId = await getLastChatTgId(getUserId(ctx));
+    }
 
     return ctx.reply(
       formatSystemMessage(STRINGS.MAIN_MENU),
-      isProvider
+      canProvide
         ? getMainSceneProviderKeyboard(isAvailable)
         : getMainSceneConsumerKeyboard(!!lastChatTgId),
     );
@@ -62,7 +70,10 @@ mainScene.on(message("text"), async (ctx) => {
 
       case STRINGS.START_PROVIDING: {
         await Promise.all([
-          addActiveProvider(getUserId(ctx)),
+          updateUserPreferences(getUserId(ctx), {
+            is_providing: true,
+            is_busy: false,
+          }),
           ctx.reply(formatSystemMessage(STRINGS.LOADING)),
         ]);
         await ctx.scene.leave();
@@ -70,11 +81,30 @@ mainScene.on(message("text"), async (ctx) => {
       }
       case STRINGS.STOP_PROVIDING: {
         await Promise.all([
-          removeActiveProvider(getUserId(ctx)),
+          updateUserPreferences(getUserId(ctx), {
+            is_providing: false,
+            is_busy: false,
+          }),
           ctx.scene.leave(),
         ]);
         return ctx.scene.enter(SCENES.MAIN_SCENE);
       }
+      case STRINGS.SEND_COMPLAIN: {
+        return ctx.reply(
+          formatSystemMessage(STRINGS.YOU_CAN_COMPLAIN_HERE),
+          Markup.inlineKeyboard([
+            Markup.button.url(
+              STRINGS.COMPLAIN,
+              "https://t.me/Salam_initiative_bot",
+            ),
+          ]),
+        );
+      }
+      case STRINGS.VIEW_CONNECTS_LIST: {
+        await ctx.scene.leave();
+        return ctx.scene.enter(SCENES.CONNECTS_LIST);
+      }
+
       case STRINGS.REFRESH: {
         await ctx.scene.leave();
         return ctx.scene.enter(SCENES.MAIN_SCENE);

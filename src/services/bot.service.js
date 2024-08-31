@@ -1,5 +1,6 @@
 import { SCENES } from "@constants/index";
 import { chatScene } from "@scenes/chat.scene";
+import { connectsListScene } from "@scenes/connects-list.scene";
 import { enterScene } from "@scenes/enter.scene";
 import { mainScene } from "@scenes/main.scene";
 import { matchingScene } from "@scenes/matching.scene";
@@ -32,10 +33,11 @@ class BotService {
           chatScene,
           providerChatScene,
           enterScene,
+          connectsListScene,
         ]);
 
         const bot = new Telegraf(TOKEN);
-        bot.use(session({ store }));
+        bot.use(session());
         bot.use(stage.middleware());
         bot.start((ctx) => {
           return ctx.scene.enter(SCENES.ENTER_SCENE);

@@ -34,7 +34,6 @@ enterScene.on(callbackQuery("data"), async (ctx) => {
         username: getUserName(ctx),
         first_name: getUserFirstName(ctx),
         last_name: getUserLastName(ctx),
-        is_provider: false,
       });
       await ctx.answerCbQuery();
       await ctx.scene.leave();

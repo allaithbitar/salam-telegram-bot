@@ -51,18 +51,17 @@ export class AppService {
 
   removeRelatedConnections(userId) {
     const userIdString = String(userId);
-    if (this._localCurrentConnects.has(userIdString)) {
-      this._localCurrentConnects.delete(
-        String(this._localCurrentConnects.get(userIdString) ?? 0),
-      );
-      this._localCurrentConnects.delete(userIdString);
-    }
+    const partnerUserIdString = String(
+      this._localCurrentConnects.get(userIdString),
+    );
+    this._localCurrentConnects.delete(userIdString);
+    this._localCurrentConnects.delete(partnerUserIdString);
   }
 
   handleDbChangeEvent(event) {
     const { table, old, eventType, new: newState } = event;
     switch (table) {
-      case "current_chats": {
+      case "bot_current_chats": {
         if (eventType === "DELETE") {
           const { consumer_id, provider_id } = old;
           this.removeRelatedConnections(consumer_id);

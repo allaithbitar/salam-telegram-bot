@@ -5,8 +5,10 @@ import { formatSystemMessage, getUserId, replyError } from "@utils/index.js";
 import {
   createChat,
   getCurrentUserTypeAndStatus,
+  getLastChatTgId,
   getRandomAvailableProviderTgId,
   removeAnyRelatedCurrentChats,
+  updateUserPreferences,
 } from "@db/actions.js";
 import { appService } from "@utils/app.service";
 import { generateProviderChatScreenkeyboard } from "@utils/keyboards";
@@ -18,11 +20,41 @@ export const LEAVE_UNHANDLED_CHAT_KEYBOARD = Markup.inlineKeyboard([
   Markup.button.callback(STRINGS.LEAVE_NO_BRACKETS, STRINGS.LEAVE),
 ]);
 
+const getMessageSentToConnectedProvider = (
+  isConnectingToLastProvider,
+  isConnectingToASpecifiedProvider,
+) => {
+  if (isConnectingToLastProvider) {
+    return STRINGS.PROVIDER_YOU_HAVE_BEEN_LINKED_WTIH_LAST_CONSUMER;
+  }
+  if (isConnectingToASpecifiedProvider) {
+    return STRINGS.PROVIDER_YOU_HAVE_BEEN_LINKED_WTIH_CONSUMER_THAT_HAS_CHOSEN_YOU;
+  }
+  return STRINGS.YOU_HAVE_BEEN_LINKED_WITH_A_CONSUMER;
+};
+
+const getMessageSentToConsumerSuccessConnect = (
+  isConnectingToLastProvider,
+  isConnectingToASpecifiedProvider,
+) => {
+  console.log({ isConnectingToLastProvider, isConnectingToASpecifiedProvider });
+  if (isConnectingToLastProvider) {
+    return STRINGS.CONSUMER_YOU_HAVE_BEEN_LINKED_WTIH_LAST_PROVIDER;
+  }
+  if (isConnectingToASpecifiedProvider) {
+    return STRINGS.CONSUMER_YOU_HAVE_BEEN_LINKED_WTIH_SPECIFIED_PROVIDER;
+  }
+  return STRINGS.YOU_HAVE_BEEN_LINKED_WTIH_A_PROVIDER;
+};
+
 const handleCreateChatAndPair = async (
   ctx,
   providerId,
   isConnectingToLastProvider,
+  isConnectingToASpecifiedProvider,
 ) => {
+  await updateUserPreferences(providerId, { is_busy: true });
+
   const { error: errorInCreatingChat } = await createChat({
     providerId: providerId,
     consumerId: getUserId(ctx),
@@ -30,28 +62,32 @@ const handleCreateChatAndPair = async (
 
   // conflict error which means a user is already in a chat
   if (errorInCreatingChat) {
+    await updateUserPreferences(providerId, { is_busy: false });
     return ctx.reply(
       formatSystemMessage(STRINGS.ALREADY_IN_CHAT),
       LEAVE_UNHANDLED_CHAT_KEYBOARD,
     );
   }
+
   const _providerId = appService.getPartner(getUserId(ctx)) || providerId;
 
   await Promise.all([
     ctx.telegram.sendMessage(
       _providerId,
       formatSystemMessage(
-        isConnectingToLastProvider
-          ? STRINGS.PROVIDER_YOU_HAVE_BEEN_LINKED_WTIH_LAST_CONSUMER
-          : STRINGS.YOU_HAVE_BEEN_LINKED_WITH_A_CONSUMER,
+        getMessageSentToConnectedProvider(
+          isConnectingToLastProvider,
+          isConnectingToASpecifiedProvider,
+        ),
       ),
       generateProviderChatScreenkeyboard(true),
     ),
-    await ctx.reply(
+    ctx.reply(
       formatSystemMessage(
-        isConnectingToLastProvider
-          ? STRINGS.CONSUMER_YOU_HAVE_BEEN_LINKED_WTIH_LAST_PROVIDER
-          : STRINGS.YOU_HAVE_BEEN_LINKED_WTIH_A_PROVIDER,
+        getMessageSentToConsumerSuccessConnect(
+          isConnectingToLastProvider,
+          isConnectingToASpecifiedProvider,
+        ),
       ),
       CHAT_SCREEN_KEYBOARD,
     ),
@@ -68,24 +104,47 @@ matchingScene.enter(async (ctx) => {
     const shouldTryToConnectToTheLastProvider =
       ctx.scene.state?.tryConnectToLastProvider;
 
-    if (shouldTryToConnectToTheLastProvider) {
-      await ctx.reply(STRINGS.TRYING_TO_CONNECT_TO_LAST_PROVIDER);
+    const specifiedProviderId = ctx.scene.state.specifiedProviderId;
 
-      const { lastChatTgId: lastConsumerChatTgId } =
-        await getCurrentUserTypeAndStatus(getUserId(ctx));
+    if (shouldTryToConnectToTheLastProvider || specifiedProviderId) {
+      await ctx.reply(
+        specifiedProviderId
+          ? STRINGS.TRYING_TO_CONNECT_TO_SPECIFIED_PROVIDER
+          : STRINGS.TRYING_TO_CONNECT_TO_LAST_PROVIDER,
+      );
 
-      const { isAvailable: isLastProviderAvailable } =
-        await getCurrentUserTypeAndStatus(lastConsumerChatTgId);
+      let targetProviderId = specifiedProviderId;
+      console.log({ shouldTryToConnectToTheLastProvider, specifiedProviderId });
+      if (shouldTryToConnectToTheLastProvider) {
+        const { lastChatTgId } = await getLastChatTgId(getUserId(ctx));
+        targetProviderId = lastChatTgId;
+      }
 
-      if (isLastProviderAvailable) {
-        return handleCreateChatAndPair(ctx, lastConsumerChatTgId, true);
+      const {
+        isAvailable: isLastProviderAvailable,
+        isBusy: isLastProviderBusy,
+      } = await getCurrentUserTypeAndStatus(targetProviderId);
+
+      if (isLastProviderAvailable && !isLastProviderBusy) {
+        return handleCreateChatAndPair(
+          ctx,
+          targetProviderId,
+          !!shouldTryToConnectToTheLastProvider,
+          !!specifiedProviderId,
+        );
       }
 
       await ctx.reply(
-        formatSystemMessage(STRINGS.LAST_PROVIDER_NOT_CURRENTLY_AVAILABLE),
+        formatSystemMessage(
+          specifiedProviderId
+            ? STRINGS.SPECIFIED_PROVIDER_NOT_CURRENTLY_AVAIABLE
+            : STRINGS.LAST_PROVIDER_NOT_CURRENTLY_AVAILABLE,
+        ),
       );
       await ctx.scene.leave();
-      return ctx.scene.enter(SCENES.MAIN_SCENE);
+      return ctx.scene.enter(
+        specifiedProviderId ? SCENES.CONNECTS_LIST : SCENES.MAIN_SCENE,
+      );
     }
 
     await ctx.reply(formatSystemMessage(STRINGS.LOOKING_FOR_A_PROVIDER));

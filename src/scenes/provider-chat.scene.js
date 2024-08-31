@@ -4,9 +4,9 @@ import { SCENES, STRINGS } from "../constants/index.js";
 import { formatSystemMessage, getUserId, replyError } from "@utils/index.js";
 
 import {
-  removeActiveProvider,
+  updateUserPreferences,
   removeAnyRelatedCurrentChats,
-  updateLastChatTgId,
+  updateConnectsHistory,
 } from "@db/actions.js";
 import { generateProviderChatScreenkeyboard } from "@utils/keyboards.js";
 import { appService } from "@utils/app.service.js";
@@ -54,12 +54,15 @@ providerChatScene.on(message("text"), async (ctx) => {
     switch (ctx.message.text) {
       case STRINGS.END_CHAT: {
         if (consumerId) {
-          await updateLastChatTgId(consumerId, getUserId(ctx));
+          await updateConnectsHistory(consumerId, getUserId(ctx));
         }
 
         await Promise.all([
           ctx.reply(formatSystemMessage(STRINGS.LEAVING)),
           removeAnyRelatedCurrentChats(getUserId(ctx)),
+          updateUserPreferences(getUserId(ctx), {
+            is_busy: false,
+          }),
         ]);
 
         return Promise.all([
@@ -80,20 +83,26 @@ providerChatScene.on(message("text"), async (ctx) => {
 
       case STRINGS.STOP_PROVIDING: {
         await Promise.all([
-          removeActiveProvider(getUserId(ctx)),
+          updateUserPreferences(getUserId(ctx), {
+            is_providing: false,
+          }),
           ctx.scene.leave(),
         ]);
         return ctx.scene.enter(SCENES.MAIN_SCENE);
       }
+
       case STRINGS.END_CHAT_STOP_PROVIDING: {
         if (consumerId) {
-          await updateLastChatTgId(consumerId, getUserId(ctx));
+          await updateConnectsHistory(consumerId, getUserId(ctx));
         }
 
         await ctx.reply(formatSystemMessage(STRINGS.LEAVING)),
           await Promise.all([
             removeAnyRelatedCurrentChats(getUserId(ctx)),
-            removeActiveProvider(getUserId(ctx)),
+            updateUserPreferences(getUserId(ctx), {
+              is_providing: false,
+              is_busy: false,
+            }),
           ]);
 
         if (consumerId) {

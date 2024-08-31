@@ -1,17 +1,18 @@
-const SCENES = {
+export const SCENES = {
   ENTER_SCENE: "ENTER_SCENE",
   MATCHING_SCENE: "MATCHING_SCENE",
   MAIN_SCENE: "MAIN_SCENE",
   CHAT_SCENE: "CHAT_SCENE",
   PROVIDER_CHAT_SCENE: "PROVIDER_CHAT_SCENE",
+  CONNECTS_LIST: "CONNECTS_LIST",
 };
 
-const ACTIONS = {
+export const ACTIONS = {
   CONNECT: "CONNECT",
   START_PROVIDING: "START_PROVIDING",
   STOP_PROVIDING: "STOP_PROVIDING",
 };
-const STRINGS = {
+export const STRINGS = {
   WELCOME_MESSAGE: "WELCOME_MESSAGE",
   LOADING: "جار التحميل ...",
   MAIN_MENU: "القائمة الرئيسية :",
@@ -42,18 +43,45 @@ const STRINGS = {
   REFRESH: "[ تحديث ]",
   CONNECT_TO_LAST_PROVIDER: "[ محاولة التواصل مع اخر متطوع تم التواصل معه ]",
   LAST_PROVIDER_NOT_CURRENTLY_AVAILABLE: "المتطوع غير متوفر حاليا",
+  SPECIFIED_PROVIDER_NOT_CURRENTLY_AVAIABLE: "هذا المتطوع غير متوفر حاليا",
   TRYING_TO_CONNECT_TO_LAST_PROVIDER: "جار محاولة التواصل مع اخر متطوع...",
+  TRYING_TO_CONNECT_TO_SPECIFIED_PROVIDER:
+    "جار محاولة التواصل مع المتطوع المختار...",
   PROVIDER_YOU_HAVE_BEEN_LINKED_WTIH_LAST_CONSUMER:
     "تم ربطك مع شخص مجهول عن طريق محاولة ربطه مع اخر متطوع تواصل معه",
+  PROVIDER_YOU_HAVE_BEEN_LINKED_WTIH_CONSUMER_THAT_HAS_CHOSEN_YOU:
+    "تم ربطك مع مستفيد قام باختيارك من قائمة اتصالاته السابقة",
+
   CONSUMER_YOU_HAVE_BEEN_LINKED_WTIH_LAST_PROVIDER:
     "تم ربطك مع اخر متطوع تم التواصل معه",
+  CONSUMER_YOU_HAVE_BEEN_LINKED_WTIH_SPECIFIED_PROVIDER:
+    "تم ربطك مع المتطوع الذي قمت باختياره",
+
+  SEND_COMPLAIN: "[ إرسال شكوى ]",
+  YOU_CAN_COMPLAIN_HERE:
+    "يمكنك إرسال شكوى على البوت التالي بالضغط على الزر ادناه",
+  COMPLAIN: "إرسال شكوى",
+  VIEW_CONNECTS_LIST: "[ عرض المتطوعين الذين تم التواصل معهم مسبقا ]",
+  CONNECTS_LIST:
+    "قائمة المتطوعين الذين قمت بالتواصل معهم مسبقا, قم بالضغط على متطوع لمحاولة التواصل معه:",
+  GO_BACK_TO_MAIN_MENU: "[ العودة للقائمة الرئيسية ]",
 };
 
-const BROADCAST_TYPE = {
+export const BROADCAST_TYPE = {
   CHAT_CREATED: "CHAT_CREATED",
   CHAT_ENDED: "CHAT_ENDED",
   PROVIDER_ACTIVE: "PROVIDER_ACTIVE",
   PROVIDER_INACTIVE: "PROVIDER_INACTIVE",
 };
 
-export { BROADCAST_TYPE, STRINGS, ACTIONS, SCENES };
+export const USER_TYPE_ENUM = {
+  Consumer: "Consumer",
+  Provider: "Provider",
+  Specialist: "Specialist",
+};
+
+export const USER_TYPE_ENUM_TO_READABLE = {
+  Consumer: "مستفيد",
+  Provider: "متطوع",
+  Specialist: "مختص",
+};

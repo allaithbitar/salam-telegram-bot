@@ -8,16 +8,24 @@ import {
 } from "@utils/index.js";
 import { SCENES, STRINGS } from "@constants/index";
 import { generateProviderChatScreenkeyboard } from "@utils/keyboards";
-import { removeAnyRelatedCurrentChats, updateLastChatTgId } from "@db/actions";
+import {
+  removeAnyRelatedCurrentChats,
+  updateConnectsHistory,
+  updateUserPreferences,
+} from "@db/actions";
 import { appService } from "@utils/app.service";
 
 export const chatScene = new Scenes.BaseScene(SCENES.CHAT_SCENE);
 
 const leaveSceneAndEndChat = async (ctx) => {
-  await updateLastChatTgId(
-    getUserId(ctx),
-    appService.getPartner(getUserId(ctx)),
-  );
+  const providerId = appService.getPartner(getUserId(ctx));
+
+  await updateConnectsHistory(getUserId(ctx), providerId);
+
+  await updateUserPreferences(providerId, {
+    is_busy: false,
+  });
+
   await removeAnyRelatedCurrentChats(getUserId(ctx));
   await ctx.scene.leave();
   return ctx.scene.enter(SCENES.MAIN_SCENE);

@@ -1,5 +1,6 @@
 import { STRINGS } from "@constants/index";
 import { fmt, underline } from "telegraf/format";
+import { Stage } from "telegraf/scenes";
 
 export const getUserId = (ctx) =>
   ctx?.update?.message?.from?.id || ctx?.update?.callback_query?.from?.id || 0;
@@ -9,21 +10,21 @@ export const getUserFirstName = (ctx) =>
   ctx?.update?.message?.chat?.first_name ||
   ctx?.update?.callback_query?.from?.first_name ||
   ctx?.update?.callback_query?.chat?.first_name ||
-  "???";
+  "";
 
 export const getUserLastName = (ctx) =>
   ctx?.update?.message?.from?.last_name ||
   ctx?.update?.message?.chat?.last_name ||
   ctx?.update?.callback_query?.from?.last_name ||
   ctx?.update?.callback_query?.chat?.last_name ||
-  "???";
+  "";
 
 export const getUserName = (ctx) =>
   ctx?.update?.message?.from?.username ||
   ctx?.update?.message?.chat?.username ||
   ctx?.update?.callback_query?.from?.username ||
   ctx?.update?.callback_query?.chat?.username ||
-  "???";
+  "";
 
 export const getMessageFromId = (ctx) => ctx?.message?.from?.id;
 
@@ -56,6 +57,7 @@ export const addRemoveKeyboardToMarkup = (replayMarkup) => ({
 });
 
 export const replyError = (error, ctx) => {
+  console.log(error);
   let errorMessage;
 
   if (typeof error === "string") {
@@ -113,3 +115,14 @@ export class BotError extends Error {
     super(overrideMessage ?? "SystemError", { cause });
   }
 }
+
+const getRandomNumberInRange = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+export const generateNickname = () => {
+  let name = "";
+  for (let i = 0; i < 10; i++) {
+    name += String.fromCharCode(getRandomNumberInRange(65, 90));
+  }
+  return name;
+};
