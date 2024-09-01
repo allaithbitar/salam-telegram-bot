@@ -1,4 +1,4 @@
-import { SCENES } from "@constants/index";
+import { SCENES, STRINGS } from "@constants/index";
 import { chatScene } from "@scenes/chat.scene";
 import { connectsListScene } from "@scenes/connects-list.scene";
 import { enterScene } from "@scenes/enter.scene";
@@ -6,8 +6,9 @@ import { mainScene } from "@scenes/main.scene";
 import { matchingScene } from "@scenes/matching.scene";
 import { providerChatScene } from "@scenes/provider-chat.scene";
 import { Postgres } from "@telegraf/session/pg";
-import { replyError } from "@utils/index";
+import { formatSystemMessage, getMessageId, replyError } from "@utils/index";
 import { Scenes, session, Telegraf } from "telegraf";
+import { anyOf, message } from "telegraf/filters";
 
 const TOKEN = process.env.BOT_TOKEN;
 
@@ -37,11 +38,37 @@ class BotService {
         ]);
 
         const bot = new Telegraf(TOKEN);
-        bot.use(session());
+        bot.use(session({ store }));
         bot.use(stage.middleware());
         bot.start((ctx) => {
           return ctx.scene.enter(SCENES.ENTER_SCENE);
         });
+
+        bot.on(
+          anyOf(
+            message("game"),
+            message("dice"),
+            message("sticker"),
+            message("story"),
+            message("photo"),
+            message("video"),
+            message("voice"),
+            message("audio"),
+            message("contact"),
+            message("poll"),
+            message("location"),
+            message("document"),
+            message("invoice"),
+            message("venue"),
+          ),
+          (ctx) => {
+            return ctx.reply(formatSystemMessage(STRINGS.ONLY_TEXT_ALLOWED), {
+              reply_parameters: {
+                message_id: getMessageId(ctx),
+              },
+            });
+          },
+        );
 
         bot.catch((err, ctx) => {
           console.log(err);

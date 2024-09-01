@@ -18,13 +18,13 @@ import { appService } from "@utils/app.service";
 export const chatScene = new Scenes.BaseScene(SCENES.CHAT_SCENE);
 
 const leaveSceneAndEndChat = async (ctx) => {
-  const providerId = appService.getPartner(getUserId(ctx));
-
-  await updateConnectsHistory(getUserId(ctx), providerId);
-
-  await updateUserPreferences(providerId, {
-    is_busy: false,
-  });
+  const providerId = appService.getPartner(getUserId(ctx))?.id;
+  if (providerId) {
+    await updateConnectsHistory(getUserId(ctx), providerId);
+    await updateUserPreferences(providerId, {
+      is_busy: false,
+    });
+  }
 
   await removeAnyRelatedCurrentChats(getUserId(ctx));
   await ctx.scene.leave();
@@ -37,12 +37,14 @@ export const CHAT_SCREEN_KEYBOARD = Markup.keyboard([[STRINGS.LEAVE]])
 
 chatScene.on(message("text"), async (ctx) => {
   try {
-    const providerId = appService.getPartner(getUserId(ctx));
+    const providerId = appService.getPartner(getUserId(ctx))?.id;
+
     if (ctx.message.text !== STRINGS.LEAVE) {
+      const consumerNickname = appService.getMe(getUserId(ctx))?.nickname;
       if (providerId) {
         return ctx.telegram.sendMessage(
           providerId,
-          formatSystemMessage(ctx.message.text, "consumer"),
+          formatSystemMessage(ctx.message.text, "consumer", consumerNickname),
         );
       }
       return ctx.reply(

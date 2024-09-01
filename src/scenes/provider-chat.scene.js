@@ -29,8 +29,11 @@ providerChatScene.enter(async (ctx) => {
 });
 
 providerChatScene.on(message("text"), async (ctx) => {
+  console.log(ctx.message.text);
   try {
-    const consumerId = appService.getPartner(getUserId(ctx));
+    const consumer = appService.getPartner(getUserId(ctx));
+    const consumerId = consumer?.id;
+    const providerNickname = appService.getMe(getUserId(ctx))?.nickname;
 
     if (
       ![
@@ -40,6 +43,7 @@ providerChatScene.on(message("text"), async (ctx) => {
         STRINGS.REFRESH,
       ].includes(ctx.message.text)
     ) {
+      console.log({ consumerId });
       if (!consumerId)
         return ctx.reply(
           formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_CONSUMER),
@@ -47,7 +51,7 @@ providerChatScene.on(message("text"), async (ctx) => {
 
       return ctx.telegram.sendMessage(
         consumerId,
-        formatSystemMessage(ctx.message.text, "provider"),
+        formatSystemMessage(ctx.message.text, "provider", providerNickname),
       );
     }
 

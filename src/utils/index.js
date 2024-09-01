@@ -1,6 +1,5 @@
 import { STRINGS } from "@constants/index";
-import { fmt, underline } from "telegraf/format";
-import { Stage } from "telegraf/scenes";
+import { fmt } from "telegraf/format";
 
 export const getUserId = (ctx) =>
   ctx?.update?.message?.from?.id || ctx?.update?.callback_query?.from?.id || 0;
@@ -101,13 +100,13 @@ export const MESSAGE_PAYLOAD_TYPES = {
   CONSUMER_CONNECTED_TO_PROVIDER: "CONSUMER_CONNECTED_TO_PROVIDER",
 };
 
-export const formatSystemMessage = (messageText, from = "system") => {
+export const formatSystemMessage = (messageText, from = "system", nickname) => {
   const fromMap = {
-    system: "النظام",
+    system: "👨🏻‍💻",
     consumer: "الشخص المجهول",
     provider: "المتطوع",
   };
-  return fmt`[ ${underline`${fromMap[from]}`} ] \n ${messageText}`;
+  return fmt`${nickname ? "" : fromMap[from]}${nickname ? `[ ${nickname} ] :\n` : ""}${messageText}`;
 };
 
 export class BotError extends Error {
