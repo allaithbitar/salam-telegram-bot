@@ -27,7 +27,6 @@ export class AppService {
   getPartnerAsync(userId) {
     return new Promise((res) => {
       const interval = setInterval(() => {
-        console.log("WAITING");
         const partner = this._localCurrentConnects.get(String(userId));
         if (partner) {
           clearInterval(interval);
@@ -102,7 +101,6 @@ export class AppService {
   }
 
   handleDbChangeEvent(event) {
-    console.log(event);
     const { table, old, eventType, new: newState } = event;
     switch (table) {
       case "bot_current_chats": {

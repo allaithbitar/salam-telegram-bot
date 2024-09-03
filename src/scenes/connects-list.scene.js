@@ -24,17 +24,20 @@ connectsListScene.enter(async (ctx) => {
     if (!connectsList.length) {
       await ctx.reply(formatSystemMessage(STRINGS.NO_CONNECTS_LIST));
       await ctx.scene.leave();
-      return ctx.scene.enter(SCENES.MAIN_SCENE);
+      await ctx.scene.enter(SCENES.MAIN_SCENE);
+      return;
     } else {
-      return ctx.reply(
+      await ctx.reply(
         formatSystemMessage(STRINGS.CONNECTS_LIST),
         Markup.inlineKeyboard(
           connectsList.map((c) => Markup.button.callback(c.nickname, c.user)),
         ),
       );
+      return;
     }
   } catch (error) {
-    return replyError(error, ctx);
+    await replyError(error, ctx);
+    return;
   }
 });
 
@@ -45,7 +48,8 @@ connectsListScene.on(message("text"), async (ctx) => {
       await ctx.scene.enter(SCENES.MAIN_SCENE);
     }
   } catch (error) {
-    return replyError(error, ctx);
+    await replyError(error, ctx);
+    return;
   }
 });
 
@@ -53,7 +57,8 @@ connectsListScene.on(callbackQuery("data"), async (ctx) => {
   const providerId = ctx.callbackQuery.data;
   await ctx.telegram.deleteMessage(getChatId(ctx), getMessageId(ctx));
   await ctx.scene.leave();
-  return ctx.scene.enter(SCENES.MATCHING_SCENE, {
+  await ctx.scene.enter(SCENES.MATCHING_SCENE, {
     specifiedProviderId: providerId,
   });
+  return;
 });

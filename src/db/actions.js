@@ -17,7 +17,6 @@ export const getRandomAvailableProviderTgId = async (
   const res = await cloudDb.rpc("get_random_provider_or_specialist", {
     p_user_type: providerType,
   });
-  console.log(res);
   return res.data?.id;
 };
 

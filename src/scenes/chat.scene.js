@@ -28,7 +28,8 @@ const leaveSceneAndEndChat = async (ctx) => {
 
   await removeAnyRelatedCurrentChats(getUserId(ctx));
   await ctx.scene.leave();
-  return ctx.scene.enter(SCENES.MAIN_SCENE);
+  await ctx.scene.enter(SCENES.MAIN_SCENE);
+  return;
 };
 
 export const CHAT_SCREEN_KEYBOARD = Markup.keyboard([[STRINGS.LEAVE]])
@@ -42,15 +43,17 @@ chatScene.on(message("text"), async (ctx) => {
     if (ctx.message.text !== STRINGS.LEAVE) {
       const consumerNickname = appService.getMe(getUserId(ctx))?.nickname;
       if (providerId) {
-        return ctx.telegram.sendMessage(
+        await ctx.telegram.sendMessage(
           providerId,
           formatSystemMessage(ctx.message.text, "consumer", consumerNickname),
         );
+        return;
       }
-      return ctx.reply(
+      await ctx.reply(
         formatSystemMessage(STRINGS.PROVIDER_IS_NO_MORE),
         CHAT_SCREEN_KEYBOARD,
       );
+      return;
     }
 
     await replyWithClearKeyboard(ctx, formatSystemMessage(STRINGS.LEAVING));
@@ -62,7 +65,8 @@ chatScene.on(message("text"), async (ctx) => {
         generateProviderChatScreenkeyboard(false),
       );
     }
-    return leaveSceneAndEndChat(ctx);
+    await leaveSceneAndEndChat(ctx);
+    return;
   } catch (error) {
     return replyError(error);
   }

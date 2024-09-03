@@ -24,12 +24,12 @@ providerChatScene.enter(async (ctx) => {
       ),
     );
   } catch (error) {
-    return replyError(error, ctx);
+    await replyError(error, ctx);
+    return;
   }
 });
 
 providerChatScene.on(message("text"), async (ctx) => {
-  console.log(ctx.message.text);
   try {
     const consumer = appService.getPartner(getUserId(ctx));
     const consumerId = consumer?.id;
@@ -43,16 +43,18 @@ providerChatScene.on(message("text"), async (ctx) => {
         STRINGS.REFRESH,
       ].includes(ctx.message.text)
     ) {
-      console.log({ consumerId });
-      if (!consumerId)
-        return ctx.reply(
+      if (!consumerId) {
+        await ctx.reply(
           formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_CONSUMER),
         );
+        return;
+      }
 
-      return ctx.telegram.sendMessage(
+      await ctx.telegram.sendMessage(
         consumerId,
         formatSystemMessage(ctx.message.text, "provider", providerNickname),
       );
+      return;
     }
 
     switch (ctx.message.text) {
@@ -69,7 +71,7 @@ providerChatScene.on(message("text"), async (ctx) => {
           }),
         ]);
 
-        return Promise.all([
+        await Promise.all([
           ctx.reply(
             formatSystemMessage(STRINGS.CONVERSATION_HAS_BEEN_ENDED),
             generateProviderChatScreenkeyboard(false),
@@ -83,6 +85,7 @@ providerChatScene.on(message("text"), async (ctx) => {
               ]
             : []),
         ]);
+        return;
       }
 
       case STRINGS.STOP_PROVIDING: {
@@ -92,7 +95,8 @@ providerChatScene.on(message("text"), async (ctx) => {
           }),
           ctx.scene.leave(),
         ]);
-        return ctx.scene.enter(SCENES.MAIN_SCENE);
+        await ctx.scene.enter(SCENES.MAIN_SCENE);
+        return;
       }
 
       case STRINGS.END_CHAT_STOP_PROVIDING: {
@@ -117,7 +121,8 @@ providerChatScene.on(message("text"), async (ctx) => {
         }
 
         await ctx.scene.leave();
-        return ctx.scene.enter(SCENES.MAIN_SCENE);
+        await ctx.scene.enter(SCENES.MAIN_SCENE);
+        return;
       }
       // case STRINGS.REFRESH: {
       //   await ctx.reply(
@@ -129,6 +134,7 @@ providerChatScene.on(message("text"), async (ctx) => {
       // }
     }
   } catch (error) {
-    return replyError(error, ctx);
+    await replyError(error, ctx);
+    return;
   }
 });

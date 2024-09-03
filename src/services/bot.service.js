@@ -70,9 +70,8 @@ class BotService {
           },
         );
 
-        bot.catch((err, ctx) => {
-          console.log(err);
-          return replyError(ctx);
+        bot.catch((_, ctx) => {
+          return replyError("BOT_ERROR", ctx);
         });
 
         bot.launch({}, () => {

@@ -44,7 +44,7 @@ mainScene.enter(async (ctx) => {
           is_busy: false,
         }),
       ]);
-      return ctx.reply(
+      await ctx.reply(
         formatSystemMessage(
           `${STRINGS.MAIN_MENU}\n${nickname}  : الاسم المستعار الذي يظهر للطرف الاخر`,
         ),
@@ -52,9 +52,10 @@ mainScene.enter(async (ctx) => {
           ? getMainSceneProviderKeyboard(false)
           : getMainSceneConsumerKeyboard(),
       );
+      return;
     }
 
-    return ctx.reply(
+    await ctx.reply(
       formatSystemMessage(
         `${STRINGS.MAIN_MENU}\n${nickname}  : الاسم المستعار الذي يظهر للطرف الاخر`,
       ),
@@ -62,6 +63,7 @@ mainScene.enter(async (ctx) => {
         ? getMainSceneProviderKeyboard(isAvailable)
         : getMainSceneConsumerKeyboard(),
     );
+    return;
   } catch (error) {
     return replyError(error, ctx);
   }
@@ -72,11 +74,13 @@ mainScene.on(message("text"), async (ctx) => {
     switch (ctx.message.text) {
       case STRINGS.CONNECT_TO_PROVIDER: {
         await ctx.scene.leave();
-        return ctx.scene.enter(SCENES.MATCHING_SCENE);
+        await ctx.scene.enter(SCENES.MATCHING_SCENE);
+        return;
       }
       case STRINGS.CONNECT_TO_LAST_PROVIDER: {
         await ctx.scene.leave();
-        return ctx.scene.enter(SCENES.MATCHING_SCENE);
+        await ctx.scene.enter(SCENES.MATCHING_SCENE);
+        return;
       }
 
       case STRINGS.START_PROVIDING: {
@@ -88,7 +92,8 @@ mainScene.on(message("text"), async (ctx) => {
           ctx.reply(formatSystemMessage(STRINGS.LOADING)),
         ]);
         await ctx.scene.leave();
-        return ctx.scene.enter(SCENES.PROVIDER_CHAT_SCENE);
+        await ctx.scene.enter(SCENES.PROVIDER_CHAT_SCENE);
+        return;
       }
 
       case STRINGS.STOP_PROVIDING: {
@@ -99,11 +104,12 @@ mainScene.on(message("text"), async (ctx) => {
           }),
           ctx.scene.leave(),
         ]);
-        return ctx.scene.enter(SCENES.MAIN_SCENE);
+        await ctx.scene.enter(SCENES.MAIN_SCENE);
+        return;
       }
 
       case STRINGS.SEND_COMPLAIN: {
-        return ctx.reply(
+        await ctx.reply(
           formatSystemMessage(STRINGS.YOU_CAN_COMPLAIN_HERE),
           Markup.inlineKeyboard([
             Markup.button.url(
@@ -112,10 +118,12 @@ mainScene.on(message("text"), async (ctx) => {
             ),
           ]),
         );
+        return;
       }
       case STRINGS.VIEW_CONNECTS_LIST: {
         await ctx.scene.leave();
-        return ctx.scene.enter(SCENES.CONNECTS_LIST);
+        await ctx.scene.enter(SCENES.CONNECTS_LIST);
+        return;
       }
 
       case STRINGS.ACCOUNT_SETTINGS:

@@ -54,17 +54,15 @@ const handleCreateChatAndPair = async (
   // conflict error which means a user is already in a chat
   if (errorInCreatingChat) {
     await updateUserPreferences(providerId, { is_busy: false });
-    return ctx.reply(
+    await ctx.reply(
       formatSystemMessage(STRINGS.ALREADY_IN_CHAT),
       LEAVE_UNHANDLED_CHAT_KEYBOARD,
     );
+    return;
   }
 
-  console.log("1");
   const provider = await appService.getPartnerAsync(getUserId(ctx));
   const consumer = await appService.getMe(getUserId(ctx));
-
-  console.log("2", provider, consumer);
 
   await Promise.all([
     ctx.telegram.sendMessage(
@@ -89,7 +87,8 @@ const handleCreateChatAndPair = async (
   ]);
 
   await ctx.scene.leave();
-  return await ctx.scene.enter(SCENES.CHAT_SCENE);
+  await ctx.scene.enter(SCENES.CHAT_SCENE);
+  return;
 };
 
 matchingScene.enter(async (ctx) => {
@@ -117,9 +116,10 @@ matchingScene.enter(async (ctx) => {
       );
 
       await ctx.scene.leave();
-      return ctx.scene.enter(
+      await ctx.scene.enter(
         specifiedProviderId ? SCENES.CONNECTS_LIST : SCENES.MAIN_SCENE,
       );
+      return;
     }
 
     await ctx.reply(formatSystemMessage(STRINGS.LOOKING_FOR_A_PROVIDER));
@@ -129,12 +129,14 @@ matchingScene.enter(async (ctx) => {
     if (!randomProviderId) {
       await ctx.reply(formatSystemMessage(STRINGS.NO_PROVIDERS_AVAIABLE));
       await ctx.scene.leave();
-      return ctx.scene.enter(SCENES.MAIN_SCENE);
+      await ctx.scene.enter(SCENES.MAIN_SCENE);
+      return;
     }
     await handleCreateChatAndPair(ctx, randomProviderId);
     return;
   } catch (error) {
-    return replyError(error);
+    await replyError(error);
+    return;
   }
 });
 
@@ -145,8 +147,10 @@ matchingScene.on(callbackQuery("data"), async (ctx) => {
       removeAnyRelatedCurrentChats(getUserId(ctx)),
       ctx.scene.leave(),
     ]);
-    return ctx.scene.enter(SCENES.MAIN_SCENE);
+    await ctx.scene.enter(SCENES.MAIN_SCENE);
+    return;
   } catch (error) {
-    return replyError(error);
+    await replyError(error);
+    return;
   }
 });

@@ -20,9 +20,11 @@ enterScene.enter(async (ctx) => {
   try {
     const { data } = await getIsRegisteredUser(getUserId(ctx));
     if (data && data[0]?.tg_id) return ctx.scene.enter(SCENES.MAIN_SCENE);
-    return ctx.reply(STRINGS.WELCOME_MESSAGE, ENTER_SCREEN_KEYBOARD);
+    await ctx.reply(STRINGS.WELCOME_MESSAGE, ENTER_SCREEN_KEYBOARD);
+    return;
   } catch (error) {
-    return replyError(error, ctx);
+    await replyError(error, ctx);
+    return;
   }
 });
 
@@ -37,9 +39,11 @@ enterScene.on(callbackQuery("data"), async (ctx) => {
       });
       await ctx.answerCbQuery();
       await ctx.scene.leave();
-      return ctx.scene.enter(SCENES.MAIN_SCENE);
+      await ctx.scene.enter(SCENES.MAIN_SCENE);
+      return;
     }
   } catch (error) {
-    return replyError(error, ctx);
+    await replyError(error, ctx);
+    return;
   }
 });
