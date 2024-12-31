@@ -1,17 +1,17 @@
 import { appService } from "@utils/app.service";
 import { botService } from "services/bot.service";
-import { dbUpdatesChannel } from "./db";
-import { getAllActiveProviders, getAllCurrentChats } from "@db/actions";
+import apiService from "services/api.service";
 
 const BootstrapApp = async () => {
   try {
-    appService.subscribeToDbUpdatesChannel(dbUpdatesChannel);
-    await appService.syncLocalState(getAllCurrentChats, getAllActiveProviders);
+    // appService.su(dbUpdatesChannel);
+    await appService.syncLocalState(apiService.getAllOnGoingChats);
     const bot = await botService.startBot();
     process.once("SIGINT", () => bot.stop("SIGINT"));
     process.once("SIGTERM", () => bot.stop("SIGTERM"));
   } catch (error) {
     console.log(error);
+    process.exit();
   }
 };
 

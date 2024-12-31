@@ -2,14 +2,11 @@ import { Markup, Scenes } from "telegraf";
 import { callbackQuery } from "telegraf/filters";
 import { SCENES, STRINGS } from "@constants/index.js";
 import { formatSystemMessage, getUserId, replyError } from "@utils/index.js";
-import {
-  createChat,
-  removeAnyRelatedCurrentChats,
-  updateUserPreferences,
-} from "@db/actions.js";
+
 import { appService } from "@utils/app.service";
 import { generateProviderChatScreenkeyboard } from "@utils/keyboards";
 import { CHAT_SCREEN_KEYBOARD } from "./chat.scene";
+import apiService from "services/api.service";
 
 export const matchingScene = new Scenes.BaseScene(SCENES.MATCHING_SCENE);
 
@@ -44,16 +41,18 @@ const handleCreateChatAndPair = async (
   providerId,
   isConnectingToASpecifiedProvider,
 ) => {
-  await updateUserPreferences(providerId, { is_busy: true });
+  await apiService.updateUserActiveState({ tg_id: providerId, is_busy: true });
 
-  const { error: errorInCreatingChat } = await createChat({
-    providerId: providerId,
-    consumerId: getUserId(ctx),
+  const { error: errorInCreatingChat } = await apiService.createChat({
+    provider_id: providerId,
+    consumer_id: getUserId(ctx),
   });
-
   // conflict error which means a user is already in a chat
   if (errorInCreatingChat) {
-    await updateUserPreferences(providerId, { is_busy: false });
+    await apiService.updateUserActiveState({
+      is_busy: false,
+      tg_id: providerId,
+    });
     await ctx.reply(
       formatSystemMessage(STRINGS.ALREADY_IN_CHAT),
       LEAVE_UNHANDLED_CHAT_KEYBOARD,
@@ -61,32 +60,37 @@ const handleCreateChatAndPair = async (
     return;
   }
 
-  const provider = await appService.getPartnerAsync(getUserId(ctx));
-  const consumer = await appService.getMe(getUserId(ctx));
+  // const provider = await appService.getPartnerAsync(getUserId(ctx));
+  // const consumer = await appService.getMe(getUserId(ctx));
+  const consumer = await apiService.getUserProperties(getUserId(ctx));
 
-  await Promise.all([
-    ctx.telegram.sendMessage(
-      provider.id,
-      formatSystemMessage(
-        getMessageSentToConnectedProvider(
-          isConnectingToASpecifiedProvider,
-          consumer.nickname,
-        ),
-      ),
-      generateProviderChatScreenkeyboard(true),
-    ),
-    ctx.reply(
-      formatSystemMessage(
-        getMessageSentToConsumerSuccessConnect(
-          isConnectingToASpecifiedProvider,
-          provider.nickname,
-        ),
-      ),
-      CHAT_SCREEN_KEYBOARD,
-    ),
-  ]);
+  const provider = await apiService.getUserProperties(providerId);
 
-  await ctx.scene.leave();
+  await appService.registerUserInMemoryDb(consumer.user, consumer.nickname);
+  await appService.registerUserInMemoryDb(provider.user, provider.nickname);
+
+  await appService.pairUsers(consumer.user, provider.user);
+  await ctx.telegram.sendMessage(
+    provider.user,
+    formatSystemMessage(
+      getMessageSentToConnectedProvider(
+        isConnectingToASpecifiedProvider,
+        consumer.nickname,
+      ),
+    ),
+    generateProviderChatScreenkeyboard(true),
+  );
+
+  await ctx.reply(
+    formatSystemMessage(
+      getMessageSentToConsumerSuccessConnect(
+        isConnectingToASpecifiedProvider,
+        provider.nickname,
+      ),
+    ),
+    CHAT_SCREEN_KEYBOARD,
+  ),
+    await ctx.scene.leave();
   await ctx.scene.enter(SCENES.CHAT_SCENE);
   return;
 };
@@ -100,12 +104,16 @@ matchingScene.enter(async (ctx) => {
       );
 
       const specifiedProvider =
-        appService.getActiveProviderByTgId(specifiedProviderId);
+        await apiService.getProviderByTgId(specifiedProviderId);
 
-      if (specifiedProvider && !specifiedProvider.is_busy) {
+      if (
+        specifiedProvider &&
+        !specifiedProvider.is_busy &&
+        specifiedProvider.is_providing
+      ) {
         await handleCreateChatAndPair(
           ctx,
-          specifiedProvider.tgId,
+          specifiedProvider.user,
           !!specifiedProvider,
         );
         return;
@@ -124,7 +132,7 @@ matchingScene.enter(async (ctx) => {
 
     await ctx.reply(formatSystemMessage(STRINGS.LOOKING_FOR_A_PROVIDER));
 
-    const randomProviderId = appService.getRandomActiveProviderTgId();
+    const randomProviderId = await appService.getRandomActiveProviderTgId();
 
     if (!randomProviderId) {
       await ctx.reply(formatSystemMessage(STRINGS.NO_PROVIDERS_AVAIABLE));
@@ -142,11 +150,9 @@ matchingScene.enter(async (ctx) => {
 
 matchingScene.on(callbackQuery("data"), async (ctx) => {
   try {
-    Promise.all([
-      ctx.reply(formatSystemMessage(STRINGS.LEAVING)),
-      removeAnyRelatedCurrentChats(getUserId(ctx)),
-      ctx.scene.leave(),
-    ]);
+    await ctx.reply(formatSystemMessage(STRINGS.LEAVING));
+    await apiService.removeAllRelatedOnGoingChats(getUserId(ctx));
+    await ctx.scene.leave();
     await ctx.scene.enter(SCENES.MAIN_SCENE);
     return;
   } catch (error) {

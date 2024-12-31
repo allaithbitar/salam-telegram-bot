@@ -16,15 +16,19 @@
   "devDependencies": {
     "@eslint/js": "^9.9.0",
     "@types/bun": "latest",
+    "drizzle-kit": "^0.30.1",
     "eslint": "^9.9.0",
     "globals": "^15.9.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.1",
     "@telegraf/session": "^2.0.0-beta.7",
+    "axios": "^1.7.9",
+    "crypto-js": "^4.2.0",
+    "drizzle-orm": "^0.38.3",
+    "iovalkey": "^0.2.1",
     "kysely": "^0.27.2",
     "pg": "^8.12.0",
-    "crypto-js": "^4.2.0",
+    "postgres": "^3.4.5",
     "telegraf": "^4.16.3"
   },
   "peerDependencies": {

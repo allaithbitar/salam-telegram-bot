@@ -1,5 +1,4 @@
 import { SCENES, STRINGS } from "@constants/index";
-import { getIsRegisteredUser, registerUser } from "@db/actions";
 import {
   getUserFirstName,
   getUserId,
@@ -7,6 +6,7 @@ import {
   getUserName,
   replyError,
 } from "@utils/index";
+import apiService from "services/api.service";
 import { Markup, Scenes } from "telegraf";
 import { callbackQuery } from "telegraf/filters";
 
@@ -18,8 +18,16 @@ export const enterScene = new Scenes.BaseScene(SCENES.ENTER_SCENE);
 
 enterScene.enter(async (ctx) => {
   try {
-    const { data } = await getIsRegisteredUser(getUserId(ctx));
-    if (data && data[0]?.tg_id) return ctx.scene.enter(SCENES.MAIN_SCENE);
+    const isRegistered = await apiService.getIsRegisteredUser(getUserId(ctx));
+    if (isRegistered) {
+      await apiService.syncUserNames({
+        tg_id: getUserId(ctx),
+        username: getUserName(ctx),
+        first_name: getUserFirstName(ctx),
+        last_name: getUserLastName(ctx),
+      });
+      return ctx.scene.enter(SCENES.MAIN_SCENE);
+    }
     await ctx.reply(STRINGS.WELCOME_MESSAGE, ENTER_SCREEN_KEYBOARD);
     return;
   } catch (error) {
@@ -31,7 +39,7 @@ enterScene.enter(async (ctx) => {
 enterScene.on(callbackQuery("data"), async (ctx) => {
   try {
     if (ctx.callbackQuery.data === STRINGS.CONTINUE) {
-      await registerUser({
+      await apiService.registerUser({
         tg_id: getUserId(ctx),
         username: getUserName(ctx),
         first_name: getUserFirstName(ctx),

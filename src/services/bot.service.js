@@ -16,14 +16,13 @@ class BotService {
   async startBot() {
     return new Promise((res, rej) => {
       try {
-        console.log("Launcing Bot");
         const store = Postgres({
-          port: process.env.BOT_SESSION_DB_PORT,
-          table: process.env.BOT_SESSION_TABLE_NAME,
-          host: process.env.BOT_SESSION_DB_HOST,
-          database: process.env.BOT_SESSION_DB_NAME,
-          user: process.env.BOT_SESSION_DB_USER,
-          password: process.env.BOT_SESSION_DB_PASSWORD,
+          port: Number(process.env.POSTGRES_PORT),
+          table: "bot_sessions",
+          host: process.env.POSTGRES_HOST,
+          database: process.env.POSTGRES_DB,
+          user: process.env.POSTGRES_USER,
+          password: process.env.POSTGRES_PASSWORD,
           onInitError: (e) => {
             console.log("Failed to use telegraf session", e);
           },
@@ -71,6 +70,7 @@ class BotService {
         );
 
         bot.catch((_, ctx) => {
+          console.error(_);
           return replyError("BOT_ERROR", ctx);
         });
 

@@ -1,12 +1,8 @@
-import { SCENES, STRINGS } from "@constants/index";
-import {
-  updateUserPreferences,
-  getCurrentUserTypeAndStatus,
-  removeAnyRelatedCurrentChats,
-  getDashboardUserId,
-} from "@db/actions";
+import { SCENES, STRINGS, USER_TYPE_ENUM } from "@constants/index";
+import { appService } from "@utils/app.service";
 import { formatSystemMessage, getUserId, replyError } from "@utils/index";
 import { encrypt } from "libs/crypto-js";
+import apiService from "services/api.service";
 import { Markup, Scenes } from "telegraf";
 import { message } from "telegraf/filters";
 
@@ -34,25 +30,22 @@ const getMainSceneConsumerKeyboard = () =>
 
 mainScene.enter(async (ctx) => {
   try {
-    const { canProvide, isAvailable, nickname, isBusy } =
-      await getCurrentUserTypeAndStatus(getUserId(ctx));
+    const { user_type, is_providing, nickname, is_busy } =
+      (await apiService.getUserProperties(getUserId(ctx))) || {};
+    const canProvide = [
+      USER_TYPE_ENUM.Specialist,
+      USER_TYPE_ENUM.Provider,
+    ].includes(user_type);
 
-    if (isBusy) {
-      await Promise.all([
-        removeAnyRelatedCurrentChats(getUserId(ctx)),
-        updateUserPreferences(getUserId(ctx), {
-          is_busy: false,
-        }),
-      ]);
-      await ctx.reply(
-        formatSystemMessage(
-          `${STRINGS.MAIN_MENU}\n${nickname}  : الاسم المستعار الذي يظهر للطرف الاخر`,
-        ),
-        canProvide
-          ? getMainSceneProviderKeyboard(false)
-          : getMainSceneConsumerKeyboard(),
-      );
-      return;
+    if (is_busy) {
+      await apiService.removeAllRelatedOnGoingChats(getUserId(ctx));
+
+      await appService.removeRelatedConnections(getUserId(ctx));
+
+      await apiService.updateUserActiveState({
+        tg_id: getUserId(ctx),
+        is_busy: false,
+      });
     }
 
     await ctx.reply(
@@ -60,9 +53,14 @@ mainScene.enter(async (ctx) => {
         `${STRINGS.MAIN_MENU}\n${nickname}  : الاسم المستعار الذي يظهر للطرف الاخر`,
       ),
       canProvide
-        ? getMainSceneProviderKeyboard(isAvailable)
+        ? getMainSceneProviderKeyboard(is_providing)
         : getMainSceneConsumerKeyboard(),
     );
+
+    if (is_providing) {
+      await ctx.scene.leave();
+      await ctx.scene.enter(SCENES.PROVIDER_CHAT_SCENE);
+    }
     return;
   } catch (error) {
     return replyError(error, ctx);
@@ -84,26 +82,29 @@ mainScene.on(message("text"), async (ctx) => {
       }
 
       case STRINGS.START_PROVIDING: {
-        await Promise.all([
-          updateUserPreferences(getUserId(ctx), {
-            is_providing: true,
-            is_busy: false,
-          }),
-          ctx.reply(formatSystemMessage(STRINGS.LOADING)),
-        ]);
+        await ctx.reply(formatSystemMessage(STRINGS.LOADING));
+
+        await apiService.updateUserActiveState({
+          tg_id: getUserId(ctx),
+          is_providing: true,
+          is_busy: false,
+        });
+
         await ctx.scene.leave();
+
         await ctx.scene.enter(SCENES.PROVIDER_CHAT_SCENE);
         return;
       }
 
       case STRINGS.STOP_PROVIDING: {
-        await Promise.all([
-          updateUserPreferences(getUserId(ctx), {
-            is_providing: false,
-            is_busy: false,
-          }),
-          ctx.scene.leave(),
-        ]);
+        await apiService.updateUserActiveState({
+          tg_id: getUserId(ctx),
+          is_providing: false,
+          is_busy: false,
+        });
+
+        await ctx.scene.leave();
+
         await ctx.scene.enter(SCENES.MAIN_SCENE);
         return;
       }
@@ -128,9 +129,8 @@ mainScene.on(message("text"), async (ctx) => {
 
       case STRINGS.ACCOUNT_SETTINGS:
         {
-          const { data } = await getDashboardUserId(getUserId(ctx));
-          const dashboardUserId = data?.[0]?.id;
-          const role = data?.[0]?.role;
+          const { id: dashboardUserId, role } =
+            await apiService.getDashboardAccountByTgId(getUserId(ctx));
 
           if (!dashboardUserId) {
             await ctx.reply(STRINGS.DASHBOARD_ACCOUNT_NOT_FOUND);

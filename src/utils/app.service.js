@@ -1,8 +1,15 @@
 import { USER_TYPE_ENUM } from "@constants/index";
+import Valkey from "iovalkey";
+import apiService from "services/api.service";
 
 export class AppService {
+  constructor(apiService) {
+    this.apiService = apiService;
+    this.valkey = new Valkey({ host: process.env.VALKEY_HOST });
+    this.valkey.flushall();
+  }
   _localCurrentConnects = new Map();
-  _activeProviders = new Map();
+  // _activeProviders = new Map();
 
   async connectProviderWithConsumer({
     providerId,
@@ -10,6 +17,7 @@ export class AppService {
     providerNickname,
     consumerNickname,
   }) {
+    this.valkey.set();
     this._localCurrentConnects.set(providerId.toString(), {
       id: consumerId,
       nickname: consumerNickname,
@@ -50,26 +58,46 @@ export class AppService {
     return this._localCurrentConnects.has(String(providerId));
   }
 
-  addOrUpdateActiveProvider(tgId, data) {
-    this._activeProviders.set(String(tgId), data);
+  async getUserNicknameFromInMemoryDb(tg_id) {
+    return (await this.valkey.get(tg_id)) || "";
   }
 
-  getActiveProviderByTgId(tgId) {
-    return this._activeProviders.get(String(tgId));
+  async getMatchId(tg_id) {
+    return Number((await this.valkey.get(`${tg_id}_current_chat`)) ?? 0);
   }
 
-  removeActiveProvider(tgId) {
-    this._activeProviders.delete(String(tgId));
+  async registerUserInMemoryDb(tg_id, nickname) {
+    return await this.valkey.set(tg_id, nickname);
   }
 
-  getRandomActiveProviderTgId(user_type = USER_TYPE_ENUM.Provider) {
-    const nonBusyActiveProvidersWithSpecifiedUserType = Array.from(
-      this._activeProviders,
-    )
-      .map(([, providerData]) => providerData)
-      .filter((p) => [!p.is_busy, user_type === p.user_type].every(Boolean));
+  // async removeUserFromInMemoryDb(tg_id) {
+  //   return await this.valkey.del(tg_id);
+  // }
 
-    let maxWillToProvide = 3;
+  async pairUsers(tg_id1, tg_id2) {
+    await this.valkey.set(`${tg_id1}_current_chat`, String(tg_id2));
+    await this.valkey.set(`${tg_id2}_current_chat`, String(tg_id1));
+  }
+
+  // addOrUpdateActiveProvider(tgId, data) {
+  //   this._activeProviders.set(String(tgId), data);
+  // }
+
+  // getActiveProviderByTgId(tgId) {
+  //   return this._activeProviders.get(String(tgId));
+  // }
+
+  // removeActiveProvider(tgId) {
+  //   this._activeProviders.delete(String(tgId));
+  // }
+
+  async getRandomActiveProviderTgId(user_type = USER_TYPE_ENUM.Provider) {
+    const activeProviders = await this.apiService.getAllActiveProviders();
+    const nonBusyActiveProvidersWithSpecifiedUserType = activeProviders.filter(
+      (p) => [!p.is_busy, user_type === p.user_type].every(Boolean),
+    );
+
+    let maxWillToProvide = 1;
 
     for (const provider of nonBusyActiveProvidersWithSpecifiedUserType) {
       maxWillToProvide = Math.max(maxWillToProvide, provider.will_to_provide);
@@ -82,7 +110,7 @@ export class AppService {
 
     return providersWithMaxWillToProvide[
       Math.floor(Math.random() * providersWithMaxWillToProvide.length)
-    ]?.tgId;
+    ]?.user;
   }
 
   // removeConnectionBetweenProviderAndConsumer({ providerId, consumerId }) {
@@ -91,90 +119,122 @@ export class AppService {
   //   // this._avaiableProvider.set(String(providerId), providerId);
   // }
 
-  removeRelatedConnections(userId) {
-    const userIdString = String(userId);
-    const partnerUserIdString = String(
-      this._localCurrentConnects.get(userIdString),
+  async removeRelatedConnections(tg_id) {
+    const matchId = await this.valkey.get(`${tg_id}_current_chat`);
+    await this.valkey.del(matchId);
+    await this.valkey.del(tg_id);
+    await this.valkey.del(`${tg_id}_current_chat`);
+    await this.valkey.del(`${matchId}_current_chat`);
+
+    // const userIdString = String(tg_id);
+    // const partnerUserIdString = String(
+    //   this._localCurrentConnects.get(userIdString),
+    // );
+    // this._localCurrentConnects.delete(userIdString);
+    // this._localCurrentConnects.delete(partnerUserIdString);
+  }
+
+  // handleDbChangeEvent(event) {
+  //   const { table, old, eventType, new: newState } = event;
+  //   switch (table) {
+  //     case "bot_current_chats": {
+  //       if (eventType === "DELETE") {
+  //         const { consumer_id, provider_id } = old;
+  //         this.removeRelatedConnections(consumer_id);
+  //         this.removeRelatedConnections(provider_id);
+  //         return;
+  //       }
+  //       if (eventType === "INSERT") {
+  //         const {
+  //           consumer_id,
+  //           provider_id,
+  //           provider_nickname,
+  //           consumer_nickname,
+  //         } = newState;
+  //         this.connectProviderWithConsumer({
+  //           providerId: provider_id,
+  //           consumerId: consumer_id,
+  //           providerNickname: provider_nickname,
+  //           consumerNickname: consumer_nickname,
+  //         });
+  //         this.addOrUpdateActiveProvider(provider_id, {
+  //           ...this.getActiveProviderByTgId(provider_id),
+  //           is_busy: true,
+  //         });
+  //
+  //         return;
+  //       }
+  //       return;
+  //     }
+  //     case "bot_user_preferences": {
+  //       if (eventType === "UPDATE") {
+  //         const {
+  //           is_providing,
+  //           user: tgId,
+  //           nickname,
+  //           will_to_provide,
+  //           user_type,
+  //           is_busy,
+  //         } = newState;
+  //         if (is_providing) {
+  //           this.addOrUpdateActiveProvider(tgId, {
+  //             nickname,
+  //             will_to_provide,
+  //             user_type,
+  //             is_busy,
+  //             tgId,
+  //           });
+  //         } else {
+  //           this.removeActiveProvider(tgId);
+  //         }
+  //         return;
+  //       }
+  //       return;
+  //     }
+  //   }
+  // }
+
+  // subscribeToDbUpdatesChannel(dbUpdatesChannel) {
+  //   dbUpdatesChannel
+  //     .on(
+  //       "postgres_changes",
+  //       {
+  //         event: "*",
+  //         schema: "public",
+  //       },
+  //       (payload) => this.handleDbChangeEvent(payload),
+  //     )
+  //     .subscribe();
+  // }
+
+  // __insetActiveProvidersToInMemoryDb(activeProviders) {
+  //   this.valkey.set("active_providers", JSON.stringify(activeProviders));
+  //   // this._activeProviders.set(String(p.user), {
+  //   //   ...p,
+  //   //   tgId: p.user,
+  //   // });
+  // }
+  // async __removeActiveProviderFromInMemoryDb(tg_id) {
+  //   const providers = JSON.parse(
+  //     (await this.valkey.get("active_providers")) || [],
+  //   );
+  //   await this.valkey.set(
+  //     "active_providers",
+  //     JSON.stringify(providers.map((p) => p.user !== tg_id)),
+  //   );
+  // }
+
+  async __addActiveProviderToInMemoryDb(provider) {
+    const providers = JSON.parse(
+      (await this.valkey.get("active_providers")) || [],
     );
-    this._localCurrentConnects.delete(userIdString);
-    this._localCurrentConnects.delete(partnerUserIdString);
+    providers.push(provider);
+
+    await this.valkey.set("active_providers", JSON.stringify(providers));
   }
 
-  handleDbChangeEvent(event) {
-    const { table, old, eventType, new: newState } = event;
-    switch (table) {
-      case "bot_current_chats": {
-        if (eventType === "DELETE") {
-          const { consumer_id, provider_id } = old;
-          this.removeRelatedConnections(consumer_id);
-          this.removeRelatedConnections(provider_id);
-          return;
-        }
-        if (eventType === "INSERT") {
-          const {
-            consumer_id,
-            provider_id,
-            provider_nickname,
-            consumer_nickname,
-          } = newState;
-          this.connectProviderWithConsumer({
-            providerId: provider_id,
-            consumerId: consumer_id,
-            providerNickname: provider_nickname,
-            consumerNickname: consumer_nickname,
-          });
-          this.addOrUpdateActiveProvider(provider_id, {
-            ...this.getActiveProviderByTgId(provider_id),
-            is_busy: true,
-          });
-
-          return;
-        }
-        return;
-      }
-      case "bot_user_preferences": {
-        if (eventType === "UPDATE") {
-          const {
-            is_providing,
-            user: tgId,
-            nickname,
-            will_to_provide,
-            user_type,
-            is_busy,
-          } = newState;
-          if (is_providing) {
-            this.addOrUpdateActiveProvider(tgId, {
-              nickname,
-              will_to_provide,
-              user_type,
-              is_busy,
-              tgId,
-            });
-          } else {
-            this.removeActiveProvider(tgId);
-          }
-          return;
-        }
-        return;
-      }
-    }
-  }
-
-  constructor() {}
-
-  subscribeToDbUpdatesChannel(dbUpdatesChannel) {
-    dbUpdatesChannel
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-        },
-        (payload) => this.handleDbChangeEvent(payload),
-      )
-      .subscribe();
-  }
-  async syncLocalState(currentChatsSource, currentActiveProvidersSource) {
+  async syncLocalState(currentChatsSource) {
+    // this.apiService.getAllOnGoingChats()
     const { data, error } = await currentChatsSource();
     if (!error && data) {
       for (const chat of data) {
@@ -184,25 +244,18 @@ export class AppService {
           provider_nickname,
           consumer_nickname,
         } = chat;
-        this.connectProviderWithConsumer({
-          consumerId: consumer_id,
-          providerId: provider_id,
-          consumerNickname: consumer_nickname,
-          providerNickname: provider_nickname,
-        });
-      }
-    }
-    const { data: activeProviders, error: activeProvidersError } =
-      await currentActiveProvidersSource();
-    if (activeProviders && !activeProvidersError) {
-      for (const p of activeProviders) {
-        this._activeProviders.set(String(p.user), {
-          ...p,
-          tgId: p.user,
-        });
+        this.valkey.set(consumer_id, consumer_nickname);
+        this.valkey.set(provider_id, provider_nickname);
+        this.pairUsers(consumer_id, provider_id);
+        // this.connectProviderWithConsumer({
+        //   consumerId: consumer_id,
+        //   providerId: provider_id,
+        //   consumerNickname: consumer_nickname,
+        //   providerNickname: provider_nickname,
+        // });
       }
     }
   }
 }
 
-export const appService = new AppService();
+export const appService = new AppService(apiService);

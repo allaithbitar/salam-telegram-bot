@@ -1,5 +1,4 @@
 import { SCENES, STRINGS } from "@constants/index";
-import { getConsumerConnectsList } from "@db/actions";
 import {
   formatSystemMessage,
   getChatId,
@@ -7,6 +6,7 @@ import {
   getUserId,
   replyError,
 } from "@utils/index";
+import apiService from "services/api.service";
 import { Markup, Scenes } from "telegraf";
 import { callbackQuery, message } from "telegraf/filters";
 
@@ -18,7 +18,7 @@ connectsListScene.enter(async (ctx) => {
       formatSystemMessage(STRINGS.LOADING),
       Markup.keyboard([[STRINGS.GO_BACK_TO_MAIN_MENU]]).resize(),
     );
-    const { data: connectsList } = await getConsumerConnectsList(
+    const connectsList = await apiService.getConsumerConnectsList(
       getUserId(ctx),
     );
     if (!connectsList.length) {
