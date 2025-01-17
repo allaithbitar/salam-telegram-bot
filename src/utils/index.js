@@ -62,9 +62,10 @@ export const replyError = (error, ctx) => {
   if (typeof error === "string") {
     errorMessage = error;
   }
-
   errorMessage =
     errorMessage ??
+    error?.response?.data?.error ??
+    error?.response?.data?.message ??
     error?.error?.message ??
     error.message ??
     STRINGS.SOMETHING_WENT_WRONG;

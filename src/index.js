@@ -7,8 +7,10 @@ const BootstrapApp = async () => {
     // appService.su(dbUpdatesChannel);
     await appService.syncLocalState(apiService.getAllOnGoingChats);
     const bot = await botService.startBot();
-    process.once("SIGINT", () => bot.stop("SIGINT"));
-    process.once("SIGTERM", () => bot.stop("SIGTERM"));
+    process.on("SIGINT", () => bot.stop("SIGINT"));
+    process.on("SIGTERM", () => {
+      process.exit();
+    });
   } catch (error) {
     console.log(error);
     process.exit();

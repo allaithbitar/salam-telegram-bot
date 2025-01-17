@@ -62,9 +62,9 @@ const handleCreateChatAndPair = async (
 
   // const provider = await appService.getPartnerAsync(getUserId(ctx));
   // const consumer = await appService.getMe(getUserId(ctx));
-  const consumer = await apiService.getUserProperties(getUserId(ctx));
+  const consumer = await apiService.getUserPreferences(getUserId(ctx));
 
-  const provider = await apiService.getUserProperties(providerId);
+  const provider = await apiService.getUserPreferences(providerId);
 
   await appService.registerUserInMemoryDb(consumer.user, consumer.nickname);
   await appService.registerUserInMemoryDb(provider.user, provider.nickname);

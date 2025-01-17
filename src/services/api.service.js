@@ -19,14 +19,14 @@ class ApiService {
     return data;
   }
 
-  async getUserProperties(tg_id) {
+  async getUserPreferences(tg_id) {
     try {
-      const { data } = await api.get("GetUserProperties", {
+      const { data } = await api.get("GetUserPreferences", {
         params: { tg_id },
       });
       return data.data;
     } catch (error) {
-      console.error("Error Loading User Properies", error);
+      console.error("Error Loading User Preferences", error);
       return null;
     }
   }
@@ -57,16 +57,11 @@ class ApiService {
     }
   }
 
-  async getDashboardAccountByTgId(tg_id) {
-    try {
-      const { data } = await api.get("GetDashboardAccountByTgId", {
-        params: { tg_id },
-      });
-      return data.data;
-    } catch (error) {
-      console.error("Error Getting Dashboard Account By TgId", error);
-      return null;
-    }
+  async generateDashboardAuthToken(tg_id) {
+    const { data } = await api.get("GenerateDashboardAuthToken", {
+      params: { tg_id },
+    });
+    return data.data;
   }
 
   async registerUser({ tg_id, first_name, last_name, username }) {

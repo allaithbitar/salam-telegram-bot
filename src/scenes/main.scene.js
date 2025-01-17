@@ -1,7 +1,6 @@
 import { SCENES, STRINGS, USER_TYPE_ENUM } from "@constants/index";
 import { appService } from "@utils/app.service";
 import { formatSystemMessage, getUserId, replyError } from "@utils/index";
-import { encrypt } from "libs/crypto-js";
 import apiService from "services/api.service";
 import { Markup, Scenes } from "telegraf";
 import { message } from "telegraf/filters";
@@ -31,7 +30,7 @@ const getMainSceneConsumerKeyboard = () =>
 mainScene.enter(async (ctx) => {
   try {
     const { user_type, is_providing, nickname, is_busy } =
-      (await apiService.getUserProperties(getUserId(ctx))) || {};
+      (await apiService.getUserPreferences(getUserId(ctx))) || {};
     const canProvide = [
       USER_TYPE_ENUM.Specialist,
       USER_TYPE_ENUM.Provider,
@@ -127,33 +126,33 @@ mainScene.on(message("text"), async (ctx) => {
         return;
       }
 
-      case STRINGS.ACCOUNT_SETTINGS:
-        {
-          const { id: dashboardUserId, role } =
-            await apiService.getDashboardAccountByTgId(getUserId(ctx));
-
-          if (!dashboardUserId) {
-            await ctx.reply(STRINGS.DASHBOARD_ACCOUNT_NOT_FOUND);
-            return;
-          }
-
-          const token = encrypt(
-            JSON.stringify({
-              botUserId: getUserId(ctx),
-              dashboardUserId,
-              role,
-            }),
-          );
-          const dashboardUrl = `${process.env.DASHBOARD_URL}/auth?token=${encodeURIComponent(token)}`;
-
-          await ctx.reply(
-            formatSystemMessage(STRINGS.ACCOUNT_SETTINGS_MESSAGE),
-            Markup.inlineKeyboard([
-              Markup.button.url(STRINGS.EDIT, dashboardUrl),
-            ]),
-          );
-        }
+      case STRINGS.ACCOUNT_SETTINGS: {
+        await ctx.reply(formatSystemMessage("تحت_التطوير"));
         return;
+        // try {
+        //   const token = await apiService.generateDashboardAuthToken(
+        //     getUserId(ctx),
+        //   );
+        //
+        //   if (!token) {
+        //     await ctx.reply(
+        //       formatSystemMessage(STRINGS.DASHBOARD_ACCOUNT_NOT_FOUND),
+        //     );
+        //   }
+        //
+        //   const dashboardUrl = `http://google.com`;
+        //
+        //   await ctx.reply(
+        //     formatSystemMessage(STRINGS.ACCOUNT_SETTINGS_MESSAGE),
+        //     Markup.inlineKeyboard([
+        //       Markup.button.url(STRINGS.EDIT, dashboardUrl),
+        //     ]),
+        //   );
+        // } catch (error) {
+        //   await replyError(error, ctx);
+        // }
+      }
+      // return;
 
       case STRINGS.REFRESH: {
         await ctx.scene.leave();
