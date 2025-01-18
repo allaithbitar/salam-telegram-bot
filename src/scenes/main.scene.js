@@ -127,30 +127,32 @@ mainScene.on(message("text"), async (ctx) => {
       }
 
       case STRINGS.ACCOUNT_SETTINGS: {
-        await ctx.reply(formatSystemMessage("تحت_التطوير"));
+        // await ctx.reply(formatSystemMessage("تحت_التطوير"));
+        // return;
+        try {
+          const token = await apiService.generateDashboardAuthToken(
+            getUserId(ctx),
+          );
+
+          if (!token) {
+            await ctx.reply(
+              formatSystemMessage(STRINGS.DASHBOARD_ACCOUNT_NOT_FOUND),
+            );
+          }
+
+          const dashboardUrl = `http://${process.env.DASHBOARD_HOST}/auth?token${encodeURIComponent(token)}`;
+
+          await ctx.reply(
+            formatSystemMessage(STRINGS.ACCOUNT_SETTINGS_MESSAGE),
+            Markup.inlineKeyboard([
+              Markup.button.url(STRINGS.EDIT, dashboardUrl),
+            ]),
+          );
+          // await ctx.reply(formatSystemMessage(dashboardUrl));
+        } catch (error) {
+          await replyError(error, ctx);
+        }
         return;
-        // try {
-        //   const token = await apiService.generateDashboardAuthToken(
-        //     getUserId(ctx),
-        //   );
-        //
-        //   if (!token) {
-        //     await ctx.reply(
-        //       formatSystemMessage(STRINGS.DASHBOARD_ACCOUNT_NOT_FOUND),
-        //     );
-        //   }
-        //
-        //   const dashboardUrl = `http://google.com`;
-        //
-        //   await ctx.reply(
-        //     formatSystemMessage(STRINGS.ACCOUNT_SETTINGS_MESSAGE),
-        //     Markup.inlineKeyboard([
-        //       Markup.button.url(STRINGS.EDIT, dashboardUrl),
-        //     ]),
-        //   );
-        // } catch (error) {
-        //   await replyError(error, ctx);
-        // }
       }
       // return;
 
