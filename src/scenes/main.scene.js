@@ -140,7 +140,7 @@ mainScene.on(message("text"), async (ctx) => {
             );
           }
 
-          const dashboardUrl = `http://${process.env.DASHBOARD_HOST}/auth?token${encodeURIComponent(token)}`;
+          const dashboardUrl = `http://${process.env.DASHBOARD_HOST}/auth?token=${encodeURIComponent(token)}`;
 
           await ctx.reply(
             formatSystemMessage(STRINGS.ACCOUNT_SETTINGS_MESSAGE),
