@@ -63,7 +63,7 @@ export class AppService {
   }
 
   async getMatchId(tg_id) {
-    return Number((await this.valkey.get(`${tg_id}_current_chat`)) ?? 0);
+    return (await this.valkey.get(`${tg_id}_current_chat`)) ?? "";
   }
 
   async registerUserInMemoryDb(tg_id, nickname) {

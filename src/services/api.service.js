@@ -122,13 +122,25 @@ class ApiService {
     return data.data;
   }
 
-  async getProviderByTgId(tg_id) {
+  async getProviderByTgId(tg_id, user_type) {
     const { data } = await api.get("GetProviderByTgId", {
       params: {
         tg_id,
+        user_type,
       },
     });
     return data.data;
+  }
+
+  async getLasChatProviderId(consumer_id) {
+    const { data } = await api.get("GetLastChatProviderId", {
+      params: { consumer_id },
+    });
+    return data.data;
+  }
+
+  async addRating(provider_id, rating) {
+    await api.post("AddRating", { provider_id, rating: Number(rating) });
   }
 }
 

@@ -31,14 +31,14 @@ const handleEndChat = async ({ ctx, consumerId }) => {
   if (consumerId) {
     await appService.removeRelatedConnections(consumerId);
 
-    await apiService.updateConnectsHistory({
-      provider_id: getUserId(ctx),
-      consumer_id: consumerId,
-    });
+    // await apiService.updateConnectsHistory({
+    //   provider_id: getUserId(ctx),
+    //   consumer_id: consumerId,
+    // });
 
     await ctx.telegram.sendMessage(
       consumerId,
-      formatSystemMessage(STRINGS.PROVIDER_HAS_ENDED_CHAT),
+      formatSystemMessage(STRINGS.THE_OTHER_SIDE_HAS_LEFT),
     );
   }
 };
@@ -83,19 +83,21 @@ providerChatScene.on(message("text"), async (ctx) => {
     ) {
       if (!consumerId) {
         await ctx.reply(
-          formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_CONSUMER),
+          formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_USER),
         );
         return;
       }
 
-      const providerNickname = await appService.getUserNicknameFromInMemoryDb(
-        getUserId(ctx),
-      );
+      // const providerNickname = await appService.getUserNicknameFromInMemoryDb(
+      //   getUserId(ctx),
+      // );
 
-      await ctx.telegram.sendMessage(
-        consumerId,
-        formatSystemMessage(ctx.message.text, "provider", providerNickname),
-      );
+      await ctx.telegram.sendMessage(consumerId, ctx.message.text, {
+        reply_parameters: {
+          message_id: ctx.message.reply_to_message?.message_id,
+          chat_id: ctx.message?.reply_to_message?.chat?.id,
+        },
+      });
       return;
     }
 

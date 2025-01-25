@@ -5,6 +5,7 @@ import { enterScene } from "@scenes/enter.scene";
 import { mainScene } from "@scenes/main.scene";
 import { matchingScene } from "@scenes/matching.scene";
 import { providerChatScene } from "@scenes/provider-chat.scene";
+import { ratingScene } from "@scenes/rating.scene";
 import { Postgres } from "@telegraf/session/pg";
 import { formatSystemMessage, getMessageId, replyError } from "@utils/index";
 import { Scenes, session, Telegraf } from "telegraf";
@@ -34,6 +35,7 @@ class BotService {
           providerChatScene,
           enterScene,
           connectsListScene,
+          ratingScene,
         ]);
 
         const bot = new Telegraf(TOKEN);

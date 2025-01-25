@@ -20,6 +20,7 @@ const getMainSceneProviderKeyboard = (isCurrentlyProviding) => {
 const getMainSceneConsumerKeyboard = () =>
   Markup.keyboard([
     STRINGS.CONNECT_TO_PROVIDER,
+    STRINGS.CONNECT_TO_SPECIALIST,
     STRINGS.VIEW_CONNECTS_LIST,
     STRINGS.SEND_COMPLAIN,
     STRINGS.REFRESH,
@@ -48,9 +49,7 @@ mainScene.enter(async (ctx) => {
     }
 
     await ctx.reply(
-      formatSystemMessage(
-        `${STRINGS.MAIN_MENU}\n${nickname}  : الاسم المستعار الذي يظهر للطرف الاخر`,
-      ),
+      formatSystemMessage(`${STRINGS.MAIN_MENU}\nالاسم المستعار : ${nickname}`),
       canProvide
         ? getMainSceneProviderKeyboard(is_providing)
         : getMainSceneConsumerKeyboard(),
@@ -71,14 +70,25 @@ mainScene.on(message("text"), async (ctx) => {
     switch (ctx.message.text) {
       case STRINGS.CONNECT_TO_PROVIDER: {
         await ctx.scene.leave();
-        await ctx.scene.enter(SCENES.MATCHING_SCENE);
+        await ctx.scene.enter(SCENES.MATCHING_SCENE, {
+          connectToType: USER_TYPE_ENUM.Provider,
+        });
         return;
       }
-      case STRINGS.CONNECT_TO_LAST_PROVIDER: {
+
+      case STRINGS.CONNECT_TO_SPECIALIST: {
         await ctx.scene.leave();
-        await ctx.scene.enter(SCENES.MATCHING_SCENE);
+        await ctx.scene.enter(SCENES.MATCHING_SCENE, {
+          connectToType: USER_TYPE_ENUM.Specialist,
+        });
         return;
       }
+
+      // case STRINGS.CONNECT_TO_LAST_PROVIDER: {
+      //   await ctx.scene.leave();
+      //   await ctx.scene.enter(SCENES.MATCHING_SCENE);
+      //   return;
+      // }
 
       case STRINGS.START_PROVIDING: {
         await ctx.reply(formatSystemMessage(STRINGS.LOADING));

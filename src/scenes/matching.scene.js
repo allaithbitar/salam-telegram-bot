@@ -1,6 +1,6 @@
 import { Markup, Scenes } from "telegraf";
 import { callbackQuery } from "telegraf/filters";
-import { SCENES, STRINGS } from "@constants/index.js";
+import { SCENES, STRINGS, USER_TYPE_ENUM } from "@constants/index.js";
 import { formatSystemMessage, getUserId, replyError } from "@utils/index.js";
 
 import { appService } from "@utils/app.service";
@@ -23,23 +23,24 @@ const getMessageSentToConnectedProvider = (
       consumerNickname,
     );
   }
-  return STRINGS.YOU_HAVE_BEEN_LINKED_WITH_A_CONSUMER;
+  return `${STRINGS.YOU_HAVE_BEEN_LINKED_WITH_A_CONSUMER}: ${consumerNickname}`;
 };
 
 const getMessageSentToConsumerSuccessConnect = (
-  isConnectingToASpecifiedProvider,
   providerNickname,
+  isSpecialist,
 ) => {
-  if (isConnectingToASpecifiedProvider) {
-    return `${STRINGS.CONSUMER_YOU_HAVE_BEEN_LINKED_WTIH_SPECIFIED_PROVIDER} ${providerNickname}`;
-  }
-  return STRINGS.YOU_HAVE_BEEN_LINKED_WTIH_A_PROVIDER;
+  // if (isConnectingToASpecifiedProvider) {
+  //   return `${STRINGS.CONSUMER_YOU_HAVE_BEEN_LINKED_WTIH_SPECIFIED_PROVIDER}\n${providerNickname}`;
+  // }
+  return `${isSpecialist ? STRINGS.YOU_HAVE_BEEN_LINKED_WTIH_A_SPECIALIST : STRINGS.YOU_HAVE_BEEN_LINKED_WTIH_A_PROVIDER}: ${providerNickname}`;
 };
 
 const handleCreateChatAndPair = async (
   ctx,
   providerId,
   isConnectingToASpecifiedProvider,
+  isConnectingToASpecialist,
 ) => {
   await apiService.updateUserActiveState({ tg_id: providerId, is_busy: true });
 
@@ -67,9 +68,16 @@ const handleCreateChatAndPair = async (
   const provider = await apiService.getUserPreferences(providerId);
 
   await appService.registerUserInMemoryDb(consumer.user, consumer.nickname);
+
   await appService.registerUserInMemoryDb(provider.user, provider.nickname);
 
   await appService.pairUsers(consumer.user, provider.user);
+
+  await apiService.updateConnectsHistory({
+    consumer_id: consumer.user,
+    provider_id: provider.user,
+  });
+
   await ctx.telegram.sendMessage(
     provider.user,
     formatSystemMessage(
@@ -84,8 +92,8 @@ const handleCreateChatAndPair = async (
   await ctx.reply(
     formatSystemMessage(
       getMessageSentToConsumerSuccessConnect(
-        isConnectingToASpecifiedProvider,
         provider.nickname,
+        isConnectingToASpecialist,
       ),
     ),
     CHAT_SCREEN_KEYBOARD,
@@ -98,13 +106,20 @@ const handleCreateChatAndPair = async (
 matchingScene.enter(async (ctx) => {
   try {
     const specifiedProviderId = ctx.scene.state.specifiedProviderId;
-    if (specifiedProviderId) {
-      await ctx.reply(
-        formatSystemMessage(STRINGS.TRYING_TO_CONNECT_TO_SPECIFIED_PROVIDER),
-      );
 
-      const specifiedProvider =
-        await apiService.getProviderByTgId(specifiedProviderId);
+    const user_type = ctx.scene.state.connectToType;
+
+    const isConnectingToASpecialist = user_type === USER_TYPE_ENUM.Specialist;
+
+    if (specifiedProviderId) {
+      // await ctx.reply(
+      //   formatSystemMessage(STRINGS.TRYING_TO_CONNECT_TO_SPECIFIED_PROVIDER),
+      // );
+
+      const specifiedProvider = await apiService.getProviderByTgId(
+        specifiedProviderId,
+        user_type,
+      );
 
       if (
         specifiedProvider &&
@@ -115,6 +130,7 @@ matchingScene.enter(async (ctx) => {
           ctx,
           specifiedProvider.user,
           !!specifiedProvider,
+          isConnectingToASpecialist,
         );
         return;
       }
@@ -130,17 +146,29 @@ matchingScene.enter(async (ctx) => {
       return;
     }
 
-    await ctx.reply(formatSystemMessage(STRINGS.LOOKING_FOR_A_PROVIDER));
+    // await ctx.reply(formatSystemMessage(STRINGS.LOOKING_FOR_A_PROVIDER));
 
-    const randomProviderId = await appService.getRandomActiveProviderTgId();
+    const randomProviderId =
+      await appService.getRandomActiveProviderTgId(user_type);
 
     if (!randomProviderId) {
-      await ctx.reply(formatSystemMessage(STRINGS.NO_PROVIDERS_AVAIABLE));
+      await ctx.reply(
+        formatSystemMessage(
+          isConnectingToASpecialist
+            ? STRINGS.NO_SPECIALIST_AVAILABLE
+            : STRINGS.NO_PROVIDERS_AVAILABLE,
+        ),
+      );
       await ctx.scene.leave();
       await ctx.scene.enter(SCENES.MAIN_SCENE);
       return;
     }
-    await handleCreateChatAndPair(ctx, randomProviderId);
+    await handleCreateChatAndPair(
+      ctx,
+      randomProviderId,
+      false,
+      isConnectingToASpecialist,
+    );
     return;
   } catch (error) {
     await replyError(error);

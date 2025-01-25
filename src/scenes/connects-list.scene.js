@@ -21,6 +21,7 @@ connectsListScene.enter(async (ctx) => {
     const connectsList = await apiService.getConsumerConnectsList(
       getUserId(ctx),
     );
+
     if (!connectsList.length) {
       await ctx.reply(formatSystemMessage(STRINGS.NO_CONNECTS_LIST));
       await ctx.scene.leave();
@@ -30,7 +31,15 @@ connectsListScene.enter(async (ctx) => {
       await ctx.reply(
         formatSystemMessage(STRINGS.CONNECTS_LIST),
         Markup.inlineKeyboard(
-          connectsList.map((c) => Markup.button.callback(c.nickname, c.user)),
+          connectsList.map((c) =>
+            Markup.button.callback(
+              c.nickname,
+              JSON.stringify({
+                tg_id: c.tg_id,
+                user_type: c.user_type,
+              }),
+            ),
+          ),
         ),
       );
       return;
@@ -54,11 +63,12 @@ connectsListScene.on(message("text"), async (ctx) => {
 });
 
 connectsListScene.on(callbackQuery("data"), async (ctx) => {
-  const providerId = ctx.callbackQuery.data;
+  const { tg_id: providerId, user_type } = JSON.parse(ctx.callbackQuery.data);
   await ctx.telegram.deleteMessage(getChatId(ctx), getMessageId(ctx));
   await ctx.scene.leave();
   await ctx.scene.enter(SCENES.MATCHING_SCENE, {
     specifiedProviderId: providerId,
+    connectToType: user_type,
   });
   return;
 });

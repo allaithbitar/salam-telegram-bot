@@ -1,6 +1,7 @@
-import {chatScene} from './chat.scene';
-import {mainScene} from './main.scene';
-import {matchingScene} from './matching.scene';
-import {providerChatScene} from './provider-chat.scene';
+import { chatScene } from "./chat.scene";
+import { mainScene } from "./main.scene";
+import { matchingScene } from "./matching.scene";
+import { providerChatScene } from "./provider-chat.scene";
+import { ratingScene } from "./rating.scene";
 
-export {chatScene, providerChatScene, matchingScene, mainScene};
+export { chatScene, providerChatScene, matchingScene, mainScene, ratingScene };
