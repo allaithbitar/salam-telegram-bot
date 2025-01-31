@@ -1,12 +1,18 @@
 import { Markup, Scenes } from "telegraf";
 import { callbackQuery } from "telegraf/filters";
 import { SCENES, STRINGS, USER_TYPE_ENUM } from "@constants/index.js";
-import { formatSystemMessage, getUserId, replyError } from "@utils/index.js";
+import {
+  formatSystemMessage,
+  getUserId,
+  replyError,
+  setScoppedCommandsMenu,
+} from "@utils/index.js";
 
 import { appService } from "@utils/app.service";
-import { generateProviderChatScreenkeyboard } from "@utils/keyboards";
-import { CHAT_SCREEN_KEYBOARD } from "./chat.scene";
+import { GenerateProviderChatSceneCommandsMenu } from "@utils/keyboards";
+// import { CHAT_SCREEN_KEYBOARD } from "./chat.scene";
 import apiService from "services/api.service";
+import { CONSUMER_CHAT_SCREEN_COMMANDS_MENU } from "./chat.scene";
 
 export const matchingScene = new Scenes.BaseScene(SCENES.MATCHING_SCENE);
 
@@ -78,6 +84,12 @@ const handleCreateChatAndPair = async (
     provider_id: provider.user,
   });
 
+  await setScoppedCommandsMenu(
+    ctx,
+    provider.user,
+    GenerateProviderChatSceneCommandsMenu(true),
+  );
+
   await ctx.telegram.sendMessage(
     provider.user,
     formatSystemMessage(
@@ -86,7 +98,12 @@ const handleCreateChatAndPair = async (
         consumer.nickname,
       ),
     ),
-    generateProviderChatScreenkeyboard(true),
+  );
+
+  await setScoppedCommandsMenu(
+    ctx,
+    consumer.user,
+    CONSUMER_CHAT_SCREEN_COMMANDS_MENU,
   );
 
   await ctx.reply(
@@ -96,7 +113,7 @@ const handleCreateChatAndPair = async (
         isConnectingToASpecialist,
       ),
     ),
-    CHAT_SCREEN_KEYBOARD,
+    // CHAT_SCREEN_KEYBOARD,
   ),
     await ctx.scene.leave();
   await ctx.scene.enter(SCENES.CHAT_SCENE);

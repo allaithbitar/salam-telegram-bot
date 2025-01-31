@@ -6,12 +6,13 @@ import {
   handleInChatMessage,
   replyError,
   replyWithClearKeyboard,
+  setScoppedCommandsMenu,
 } from "@utils/index.js";
 import { SCENES, STRINGS } from "@constants/index";
-import { generateProviderChatScreenkeyboard } from "@utils/keyboards";
 
 import { appService } from "@utils/app.service";
 import apiService from "services/api.service";
+import { GenerateProviderChatSceneCommandsMenu } from "@utils/keyboards";
 
 export const chatScene = new Scenes.BaseScene(SCENES.CHAT_SCENE);
 
@@ -43,9 +44,20 @@ const endChatAndEnterRatingScene = async (ctx) => {
   return;
 };
 
-export const CHAT_SCREEN_KEYBOARD = Markup.keyboard([[STRINGS.LEAVE]])
-  .resize()
-  .oneTime();
+// export const CHAT_SCREEN_KEYBOARD = Markup.keyboard([[STRINGS.LEAVE]])
+//   .resize()
+//   .oneTime();
+
+export const CONSUMER_CHAT_SCREEN_COMMANDS = {
+  leave: "leave",
+};
+
+export const CONSUMER_CHAT_SCREEN_COMMANDS_MENU = [
+  {
+    command: "leave",
+    description: STRINGS.LEAVE,
+  },
+];
 
 // chatScene.on("message_reaction", async (ctx) => {
 //   const reaction = ctx.messageReaction?.new_reaction;
@@ -68,42 +80,49 @@ export const CHAT_SCREEN_KEYBOARD = Markup.keyboard([[STRINGS.LEAVE]])
 //   }
 //   // console.log(ctx.update, "123");
 // });
+//
+chatScene.enter((ctx) => {
+  setScoppedCommandsMenu(
+    ctx,
+    getUserId(ctx),
+    CONSUMER_CHAT_SCREEN_COMMANDS_MENU,
+  );
+});
+
+chatScene.command(CONSUMER_CHAT_SCREEN_COMMANDS.leave, async (ctx) => {
+  const providerId = await appService.getMatchId(getUserId(ctx));
+  await ctx.reply(formatSystemMessage(STRINGS.LEAVING));
+
+  if (providerId) {
+    await setScoppedCommandsMenu(
+      ctx,
+      providerId,
+      GenerateProviderChatSceneCommandsMenu(false),
+    );
+
+    await ctx.telegram.sendMessage(
+      providerId,
+      formatSystemMessage(STRINGS.THE_OTHER_SIDE_HAS_LEFT),
+    );
+  }
+
+  await endChatAndEnterRatingScene(ctx);
+});
+
 chatScene.on(message("text"), async (ctx) => {
   try {
     const providerId = await appService.getMatchId(getUserId(ctx));
 
-    if (ctx.message.text !== STRINGS.LEAVE) {
-      // const consumerNickname = await appService.getUserNicknameFromInMemoryDb(
-      //   getUserId(ctx),
-      // );
-
-      if (!providerId) {
-        await ctx.reply(
-          formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_USER),
-          CHAT_SCREEN_KEYBOARD,
-        );
-        return;
-      }
-
-      await handleInChatMessage(ctx, providerId);
+    if (!providerId) {
+      await ctx.reply(
+        formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_USER),
+        CHAT_SCREEN_KEYBOARD,
+      );
       return;
     }
 
-    await replyWithClearKeyboard(ctx, formatSystemMessage(STRINGS.LEAVING));
+    await handleInChatMessage(ctx, providerId);
 
-    if (providerId) {
-      await ctx.telegram.sendMessage(
-        providerId,
-        formatSystemMessage(STRINGS.THE_OTHER_SIDE_HAS_LEFT),
-        generateProviderChatScreenkeyboard(false),
-      );
-    }
-
-    // await replyWithClearKeyboard(
-    //   ctx,
-    //   formatSystemMessage(STRINGS.WOULD_YOU_LIKE_TO_RATE),
-    // );
-    await endChatAndEnterRatingScene(ctx);
     return;
   } catch (error) {
     await replyError(error, ctx);

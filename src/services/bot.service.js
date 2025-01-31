@@ -73,7 +73,7 @@ class BotService {
 
         bot.catch((_, ctx) => {
           console.error(_);
-          return replyError("BOT_ERROR", ctx);
+          return replyError(_, ctx);
         });
 
         bot.launch({}, () => {

@@ -5,19 +5,31 @@ import {
   getMessageId,
   getUserId,
   replyError,
+  setScoppedCommandsMenu,
 } from "@utils/index";
 import apiService from "services/api.service";
 import { Markup, Scenes } from "telegraf";
 import { callbackQuery, message } from "telegraf/filters";
 
 export const connectsListScene = new Scenes.BaseScene(SCENES.CONNECTS_LIST);
+const COMMANDS = {
+  go_back: "go_back",
+};
+
+const COMMANDS_MENU = [
+  {
+    command: COMMANDS.go_back,
+    description: STRINGS.GO_BACK_TO_MAIN_MENU,
+  },
+];
 
 connectsListScene.enter(async (ctx) => {
   try {
-    await ctx.reply(
-      formatSystemMessage(STRINGS.LOADING),
-      Markup.keyboard([[STRINGS.GO_BACK_TO_MAIN_MENU]]).resize(),
-    );
+    await setScoppedCommandsMenu(ctx, getUserId(ctx), COMMANDS_MENU);
+    // await ctx.reply(
+    //   formatSystemMessage(STRINGS.LOADING),
+    //   Markup.keyboard([[STRINGS.GO_BACK_TO_MAIN_MENU]]).resize(),
+    // );
     const connectsList = await apiService.getConsumerConnectsList(
       getUserId(ctx),
     );
@@ -50,12 +62,10 @@ connectsListScene.enter(async (ctx) => {
   }
 });
 
-connectsListScene.on(message("text"), async (ctx) => {
+connectsListScene.command(COMMANDS.go_back, async (ctx) => {
   try {
-    if (ctx.message.text === STRINGS.GO_BACK_TO_MAIN_MENU) {
-      await ctx.scene.leave();
-      await ctx.scene.enter(SCENES.MAIN_SCENE);
-    }
+    await ctx.scene.leave();
+    await ctx.scene.enter(SCENES.MAIN_SCENE);
   } catch (error) {
     await replyError(error, ctx);
     return;

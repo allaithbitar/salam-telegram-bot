@@ -74,6 +74,7 @@ export const STRINGS = {
   THE_OTHER_SIDE_HAS_LEFT: "قام الطرف الاخر بمغادرة المحادثة",
   CONTINUE: "موافقة و متابعة",
   REFRESH: "[ تحديث 🔄 ]",
+  REFRESH_DONE: "تم التحديث",
   CONNECT_TO_LAST_PROVIDER: "[ محاولة التواصل مع اخر متطوع تم التواصل معه ]",
   LAST_PROVIDER_NOT_CURRENTLY_AVAILABLE: "المتطوع غير متوفر حاليا",
   SPECIFIED_PROVIDER_NOT_CURRENTLY_AVAIABLE:
@@ -116,6 +117,11 @@ export const STRINGS = {
 
 رأيك يهمنا ويساعدنا في تحسين تجربتك. ✨`,
   NOT_THIS_TIME: "ليس الأن",
+  YOU_HAVE_BEEN_BLOCKED: `🚫 تم حظرك من استخدام بوت سلام
+
+لقد تم حظرك بسبب مخالفة قواعد الاستخدام أو التجاوز في السلوك داخل البوت. نحن نوفر مساحة آمنة للدعم النفسي، ونحرص على احترام الجميع داخل هذا المجتمع.
+
+إذا كنت تعتقد أن هناك خطأ في هذا الإجراء، يمكنك التواصل معنا عبر القنوات الرسمية. 🤍`,
 };
 
 export const BROADCAST_TYPE = {

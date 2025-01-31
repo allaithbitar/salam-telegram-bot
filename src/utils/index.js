@@ -70,7 +70,11 @@ export const replyError = (error, ctx) => {
     error.message ??
     STRINGS.SOMETHING_WENT_WRONG;
   if (ctx) {
-    return ctx.reply(formatSystemMessage(`ERROR: ${errorMessage}`));
+    return ctx.reply(
+      formatSystemMessage(
+        `حصل خطأ ما يرجى المحاولة مرة اخرى\n ${errorMessage}`,
+      ),
+    );
   }
   return;
 };
@@ -180,4 +184,10 @@ export const handleInChatMessage = async (ctx, otherUserId) => {
   console.log("4");
 
   return;
+};
+
+export const setScoppedCommandsMenu = async (ctx, chat_id, commandsMenu) => {
+  await ctx.telegram.setMyCommands(commandsMenu, {
+    scope: { chat_id, type: "chat" },
+  });
 };
