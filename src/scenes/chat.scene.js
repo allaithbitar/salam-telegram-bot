@@ -3,6 +3,7 @@ import { message } from "telegraf/filters";
 import {
   formatSystemMessage,
   getUserId,
+  handleInChatMessage,
   replyError,
   replyWithClearKeyboard,
 } from "@utils/index.js";
@@ -46,6 +47,27 @@ export const CHAT_SCREEN_KEYBOARD = Markup.keyboard([[STRINGS.LEAVE]])
   .resize()
   .oneTime();
 
+// chatScene.on("message_reaction", async (ctx) => {
+//   const reaction = ctx.messageReaction?.new_reaction;
+//   const targetMessage = ctx.messageReaction?.message_id;
+//   const reactionSenderId = ctx.messageReaction.chat.id;
+//   console.log(ctx.messageReaction);
+//   const providerId = await appService.getMatchId(reactionSenderId);
+//
+//   console.log({
+//     reaction,
+//     targetMessage,
+//     providerId,
+//     userId: getUserId(ctx),
+//     reactionSenderId,
+//   });
+//
+//   if (reaction && targetMessage && providerId) {
+//     await ctx.telegram.setMessageReaction(providerId, targetMessage, reaction);
+//     // await ctx.messageReaction(reaction);
+//   }
+//   // console.log(ctx.update, "123");
+// });
 chatScene.on(message("text"), async (ctx) => {
   try {
     const providerId = await appService.getMatchId(getUserId(ctx));
@@ -55,19 +77,15 @@ chatScene.on(message("text"), async (ctx) => {
       //   getUserId(ctx),
       // );
 
-      if (providerId) {
-        await ctx.telegram.sendMessage(providerId, ctx.message.text, {
-          reply_parameters: {
-            message_id: ctx.message.reply_to_message?.message_id,
-            chat_id: ctx.message?.reply_to_message?.chat?.id,
-          },
-        });
+      if (!providerId) {
+        await ctx.reply(
+          formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_USER),
+          CHAT_SCREEN_KEYBOARD,
+        );
         return;
       }
-      await ctx.reply(
-        formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_USER),
-        CHAT_SCREEN_KEYBOARD,
-      );
+
+      await handleInChatMessage(ctx, providerId);
       return;
     }
 

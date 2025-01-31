@@ -1,7 +1,12 @@
 import { Scenes } from "telegraf";
 import { message } from "telegraf/filters";
 import { SCENES, STRINGS } from "../constants/index.js";
-import { formatSystemMessage, getUserId, replyError } from "@utils/index.js";
+import {
+  formatSystemMessage,
+  getUserId,
+  handleInChatMessage,
+  replyError,
+} from "@utils/index.js";
 
 import { generateProviderChatScreenkeyboard } from "@utils/keyboards.js";
 import { appService } from "@utils/app.service.js";
@@ -92,12 +97,7 @@ providerChatScene.on(message("text"), async (ctx) => {
       //   getUserId(ctx),
       // );
 
-      await ctx.telegram.sendMessage(consumerId, ctx.message.text, {
-        reply_parameters: {
-          message_id: ctx.message.reply_to_message?.message_id,
-          chat_id: ctx.message?.reply_to_message?.chat?.id,
-        },
-      });
+      await handleInChatMessage(ctx, consumerId);
       return;
     }
 

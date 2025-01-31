@@ -69,7 +69,10 @@ export const replyError = (error, ctx) => {
     error?.error?.message ??
     error.message ??
     STRINGS.SOMETHING_WENT_WRONG;
-  return ctx.reply(formatSystemMessage(`ERROR: ${errorMessage}`));
+  if (ctx) {
+    return ctx.reply(formatSystemMessage(`ERROR: ${errorMessage}`));
+  }
+  return;
 };
 
 export const getDbData = (dbRes) => dbRes.data;
@@ -125,4 +128,56 @@ export const generateNickname = () => {
     name += String.fromCharCode(getRandomNumberInRange(65, 90));
   }
   return name;
+};
+
+export const handleInChatMessage = async (ctx, otherUserId) => {
+  const isReplyingToMessage = !!ctx.message.reply_to_message;
+
+  if (!isReplyingToMessage) {
+    await ctx.copyMessage(otherUserId, {
+      message_id: ctx.message.message_id,
+      protect_content: true,
+    });
+    console.log("1");
+    return;
+  }
+
+  const isReplyingToBotMessage =
+    ctx.message.reply_to_message.has_protected_content;
+
+  const isReplyingToHimself =
+    getUserId(ctx) === ctx.message?.reply_to_message?.from?.id;
+
+  if (isReplyingToHimself) {
+    await ctx.copyMessage(otherUserId, {
+      message_id: ctx.message.message_id,
+      protect_content: true,
+      reply_to_message_id: ctx.message.reply_to_message?.message_id + 1,
+    });
+
+    console.log("2");
+    return;
+  }
+
+  // this option doesn't even get in lol
+
+  if (!isReplyingToBotMessage) {
+    await ctx.copyMessage(otherUserId, {
+      message_id: ctx.message?.message_id,
+      protect_content: true,
+    });
+
+    console.log("3");
+    return;
+  }
+
+  await ctx.copyMessage(otherUserId, {
+    message_id: ctx.message?.message_id,
+    protect_content: true,
+    reply_to_message_id: ctx.message.reply_to_message?.message_id - 1,
+  });
+
+  console.log("4");
+
+  return;
 };
