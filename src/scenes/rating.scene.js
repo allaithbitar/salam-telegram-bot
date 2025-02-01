@@ -5,13 +5,16 @@ import {
   formatSystemMessage,
   getChatId,
   getMessageId,
+  getUserId,
   replyError,
+  setScoppedCommandsMenu,
 } from "@utils/index";
 import apiService from "services/api.service";
 
 export const ratingScene = new Scenes.BaseScene(SCENES.RATING_SCENE);
 
 ratingScene.enter(async (ctx) => {
+  await setScoppedCommandsMenu(ctx, getUserId(ctx), []);
   await ctx.reply(
     formatSystemMessage(STRINGS.WOULD_YOU_LIKE_TO_RATE),
     Markup.inlineKeyboard([

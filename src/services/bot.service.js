@@ -62,13 +62,18 @@ class BotService {
             message("invoice"),
             message("venue"),
           ),
-          (ctx) => {
+          async (ctx) => {
+            await ctx.deleteMessage();
             return ctx.reply(formatSystemMessage(STRINGS.ONLY_TEXT_ALLOWED), {
-              reply_parameters: {
-                message_id: getMessageId(ctx),
-              },
+              // reply_parameters: {
+              //   message_id: getMessageId(ctx),
+              // },
             });
           },
+        );
+
+        bot.on("message_reaction", async (ctx) =>
+          ctx.reply(formatSystemMessage(STRINGS.REACTIONS_DONT_SHOW), {}),
         );
 
         bot.catch((_, ctx) => {
@@ -76,10 +81,15 @@ class BotService {
           return replyError(_, ctx);
         });
 
-        bot.launch({}, () => {
-          console.log("Bot Launched Successfully");
-          res(bot);
-        });
+        bot.launch(
+          {
+            allowedUpdates: ["message", "callback_query", "message_reaction"],
+          },
+          () => {
+            console.log("Bot Launched Successfully");
+            res(bot);
+          },
+        );
       } catch (error) {
         rej(error);
       }

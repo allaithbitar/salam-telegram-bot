@@ -114,7 +114,7 @@ export const formatSystemMessage = (messageText, from = "system", nickname) => {
     consumer: "الشخص المجهول",
     provider: "المتطوع",
   };
-  return fmt`${nickname ? "" : fromMap[from]}${nickname ? `[ ${nickname} ] :\n` : ""}${messageText}`;
+  return fmt`${nickname ? "" : fromMap[from]}\n${nickname ? `[ ${nickname} ] :\n` : ""}${messageText}`;
 };
 
 export class BotError extends Error {
@@ -140,14 +140,13 @@ export const handleInChatMessage = async (ctx, otherUserId) => {
   if (!isReplyingToMessage) {
     await ctx.copyMessage(otherUserId, {
       message_id: ctx.message.message_id,
-      protect_content: true,
     });
     console.log("1");
     return;
   }
 
-  const isReplyingToBotMessage =
-    ctx.message.reply_to_message.has_protected_content;
+  // const isReplyingToBotMessage =
+  //   ctx.message.reply_to_message.has_protected_content;
 
   const isReplyingToHimself =
     getUserId(ctx) === ctx.message?.reply_to_message?.from?.id;
@@ -155,7 +154,6 @@ export const handleInChatMessage = async (ctx, otherUserId) => {
   if (isReplyingToHimself) {
     await ctx.copyMessage(otherUserId, {
       message_id: ctx.message.message_id,
-      protect_content: true,
       reply_to_message_id: ctx.message.reply_to_message?.message_id + 1,
     });
 
@@ -165,19 +163,17 @@ export const handleInChatMessage = async (ctx, otherUserId) => {
 
   // this option doesn't even get in lol
 
-  if (!isReplyingToBotMessage) {
-    await ctx.copyMessage(otherUserId, {
-      message_id: ctx.message?.message_id,
-      protect_content: true,
-    });
-
-    console.log("3");
-    return;
-  }
+  // if (!isReplyingToBotMessage) {
+  //   await ctx.copyMessage(otherUserId, {
+  //     message_id: ctx.message?.message_id,
+  //   });
+  //
+  //   console.log("3");
+  //   return;
+  // }
 
   await ctx.copyMessage(otherUserId, {
     message_id: ctx.message?.message_id,
-    protect_content: true,
     reply_to_message_id: ctx.message.reply_to_message?.message_id - 1,
   });
 

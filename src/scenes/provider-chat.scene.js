@@ -67,6 +67,8 @@ const handleStopProviding = async ({ ctx }) => {
   await ctx.scene.leave();
 
   await ctx.scene.enter(SCENES.MAIN_SCENE);
+
+  await ctx.reply(formatSystemMessage(STRINGS.PROVIDING_STOPPED));
 };
 
 providerChatScene.enter(async (ctx) => {

@@ -36,6 +36,7 @@ const endChatAndEnterRatingScene = async (ctx) => {
 
   await apiService.removeAllRelatedOnGoingChats(getUserId(ctx));
   await appService.removeRelatedConnections(getUserId(ctx));
+  await ctx.reply(formatSystemMessage(STRINGS.CONVERSATION_HAS_BEEN_ENDED));
   await ctx.scene.leave();
   await ctx.scene.enter(SCENES.RATING_SCENE, {
     providerId,
