@@ -235,7 +235,7 @@ mainScene.command(COMMANDS.account_info, async (ctx) => {
 الاسم المستعار : ${info.nickname}
 الأولوية في تقديم الرعاية : ${info.will_to_provide}
 عدد الأشخاص المختلفين الذين تم التواصل معهم : ${info.connects_count}
-التقييم : ${info.rating}
+التقييم : ${info.rating || "لا يوجد تقييم بعد"}
 `),
     );
   } catch (error) {
