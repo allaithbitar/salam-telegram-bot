@@ -139,6 +139,13 @@ class ApiService {
     return data.data;
   }
 
+  async GetUserAccountInfo(tg_id) {
+    const { data } = await api.get("GetUserAccountInfo", {
+      params: { tg_id },
+    });
+    return data.data;
+  }
+
   async addRating(provider_id, rating) {
     await api.post("AddRating", { provider_id, rating: Number(rating) });
   }

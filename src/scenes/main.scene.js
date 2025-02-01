@@ -34,6 +34,18 @@ export const mainScene = new Scenes.BaseScene(SCENES.MAIN_SCENE);
 //     .resize()
 //     .oneTime();
 
+const COMMANDS = {
+  start_providing: "start_providing",
+  stop_providing: "stop_providing",
+  account_settings: "account_settings",
+  refresh: "refresh",
+  connect_to_provider: "connect_to_provider",
+  connect_to_specialist: "connect_to_specialist",
+  connections_list: "connections_list",
+  report: "report",
+  account_info: "account_info",
+};
+
 const PROVIDER_COMMANDS_MENU = [
   {
     command: "start_providing",
@@ -44,6 +56,10 @@ const PROVIDER_COMMANDS_MENU = [
   //   description: STRINGS.STOP_PROVIDING,
   // },
   {
+    command: "account_info",
+    description: STRINGS.ACCOUNT_INFO,
+  },
+  {
     command: "account_settings",
     description: STRINGS.ACCOUNT_SETTINGS,
   },
@@ -52,17 +68,6 @@ const PROVIDER_COMMANDS_MENU = [
     description: STRINGS.REFRESH,
   },
 ];
-
-const COMMANDS = {
-  start_providing: "start_providing",
-  stop_providing: "stop_providing",
-  account_settings: "account_settings",
-  refresh: "refresh",
-  connect_to_provider: "connect_to_provider",
-  connect_to_specialist: "connect_to_specialist",
-  connections_list: "connections_list",
-  report: "report",
-};
 
 const CONSUMER_COMMANDS_MENU = [
   {
@@ -109,13 +114,9 @@ mainScene.enter(async (ctx) => {
     ].includes(user_type);
 
     if (canProvide) {
-      await ctx.telegram.setMyCommands(PROVIDER_COMMANDS_MENU, {
-        scope: { chat_id: getUserId(ctx), type: "chat" },
-      });
+      await setScoppedCommandsMenu(ctx, getUserId(ctx), PROVIDER_COMMANDS_MENU);
     } else {
-      await ctx.telegram.setMyCommands(CONSUMER_COMMANDS_MENU, {
-        scope: { chat_id: getUserId(ctx), type: "chat" },
-      });
+      await setScoppedCommandsMenu(ctx, getUserId(ctx), CONSUMER_COMMANDS_MENU);
     }
 
     if (is_busy) {
@@ -222,6 +223,23 @@ mainScene.command(COMMANDS.account_settings, async (ctx) => {
     // await ctx.reply(formatSystemMessage(dashboardUrl));
   } catch (error) {
     await replyError(error, ctx);
+  }
+  return;
+});
+
+mainScene.command(COMMANDS.account_info, async (ctx) => {
+  try {
+    const info = await apiService.GetUserAccountInfo(getUserId(ctx));
+    await ctx.reply(
+      formatSystemMessage(`تاريخ الانضمام : ${Intl.DateTimeFormat("ar-SY").format(new Date(info.created_at))}
+الاسم المستعار : ${info.nickname}
+الأولوية في تقديم الرعاية : ${info.will_to_provide}
+عدد الأشخاص المختلفين الذين تم التواصل معهم : ${info.connects_count}
+التقييم : ${info.rating}
+`),
+    );
+  } catch (error) {
+    console.error(error);
   }
   return;
 });
