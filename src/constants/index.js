@@ -125,6 +125,22 @@ export const STRINGS = {
 إذا كنت تعتقد أن هناك خطأ في هذا الإجراء، يمكنك التواصل معنا عبر القنوات الرسمية. 🤍`,
   REACTIONS_DONT_SHOW: "التفاعل على رسالة لا يظهر للطرف الاخر",
   ACCOUNT_INFO: "معلومات الحساب",
+  INFO_MESSAGE: `يمكنك استخدام التعليمات التالية من زر القائمة في الاسفل :
+
+-  /connect_to_provider 
+محاولة التواصل مع مقدم رعاية نفسية
+
+- /connect_to_specialist 
+محاولة التواصل مع مقدم استشارة متخصصة
+
+- /connections_list
+عرض الذين تم التواصل معهم مسبقا
+
+- /report
+إرسال شكوى
+
+- /refresh
+تحديث`,
 };
 
 export const BROADCAST_TYPE = {

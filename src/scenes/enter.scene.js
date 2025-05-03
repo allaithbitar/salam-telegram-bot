@@ -1,5 +1,7 @@
 import { SCENES, STRINGS } from "@constants/index";
 import {
+  formatSystemMessage,
+  getMessageId,
   getUserFirstName,
   getUserId,
   getUserLastName,
@@ -46,6 +48,8 @@ enterScene.on(callbackQuery("data"), async (ctx) => {
         last_name: getUserLastName(ctx),
       });
       await ctx.answerCbQuery();
+      await ctx.deleteMessage(getMessageId(ctx));
+      await ctx.reply(formatSystemMessage(STRINGS.INFO_MESSAGE));
       await ctx.scene.leave();
       await ctx.scene.enter(SCENES.MAIN_SCENE);
       return;
