@@ -130,9 +130,6 @@ export const STRINGS = {
 -  /connect_to_provider 
 محاولة التواصل مع مقدم رعاية نفسية
 
-- /connect_to_specialist 
-محاولة التواصل مع مقدم استشارة متخصصة
-
 - /connections_list
 عرض الذين تم التواصل معهم مسبقا
 

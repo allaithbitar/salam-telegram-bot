@@ -74,10 +74,10 @@ const CONSUMER_COMMANDS_MENU = [
     command: "connect_to_provider",
     description: STRINGS.CONNECT_TO_PROVIDER,
   },
-  {
-    command: "connect_to_specialist",
-    description: STRINGS.CONNECT_TO_SPECIALIST,
-  },
+  // {
+  //   command: "connect_to_specialist",
+  //   description: STRINGS.CONNECT_TO_SPECIALIST,
+  // },
   {
     command: "connections_list",
     description: STRINGS.VIEW_CONNECTS_LIST,
