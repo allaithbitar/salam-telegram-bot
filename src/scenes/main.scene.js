@@ -214,7 +214,7 @@ mainScene.command(COMMANDS.account_settings, async (ctx) => {
       await ctx.reply(formatSystemMessage(STRINGS.DASHBOARD_ACCOUNT_NOT_FOUND));
     }
 
-    const dashboardUrl = `http://${process.env.DASHBOARD_HOST}/auth?token=${encodeURIComponent(token)}`;
+    const dashboardUrl = `http://${process.env.DASHBOARD_HOST}${Bun.env.NODE_ENV === "production" ? `:${Bun.env.DASHBOARD_PORT}` : ""}/auth?token=${encodeURIComponent(token)}`;
 
     await ctx.reply(
       formatSystemMessage(STRINGS.ACCOUNT_SETTINGS_MESSAGE),
