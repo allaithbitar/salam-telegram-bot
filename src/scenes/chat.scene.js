@@ -115,10 +115,7 @@ chatScene.on(message("text"), async (ctx) => {
     const providerId = await appService.getMatchId(getUserId(ctx));
 
     if (!providerId) {
-      await ctx.reply(
-        formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_USER),
-        CHAT_SCREEN_KEYBOARD,
-      );
+      await replyWithClearKeyboard(ctx, formatSystemMessage(STRINGS.YOU_ARE_NOT_CONNECTED_WTIH_ANY_USER));
       return;
     }
 
